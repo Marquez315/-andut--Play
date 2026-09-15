@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Plantilla para imprimir — Ñandutí Play</title>
+<style>
+  @page { size: A4 landscape; margin: 8mm; }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:sans-serif;color:#111;}
+  .sheet{width:268mm;height:194mm;position:relative;}
+  .frame{position:absolute;left:0;top:0;right:0;bottom:0;}
+  /* las 4 marcas: el centro de cada una define la esquina del área útil */
+  .mark{position:absolute;width:12mm;height:12mm;background:#000;}
+  .mark i{display:block;position:absolute;left:4mm;top:4mm;width:4mm;height:4mm;background:#fff;}
+  .m-tl{left:0;top:0;} .m-tr{right:0;top:0;} .m-br{right:0;bottom:0;} .m-bl{left:0;bottom:0;}
+  /* área útil = del centro de una marca al centro de la otra (6mm de offset) */
+  .useful{position:absolute;left:6mm;top:6mm;right:6mm;bottom:6mm;}
+  .draw{position:absolute;left:0;top:0;right:0;height:88%;padding:14mm 6mm 4mm;}
+  .strip{position:absolute;left:0;right:0;bottom:0;height:12%;display:flex;border:0.4mm solid #000;}
+  .sw{flex:1;}
+  h1{font-size:5mm;margin:0 0 2mm;letter-spacing:.3mm;}
+  .hint{font-size:3.2mm;color:#444;margin:0;}
+  ul{list-style:none;padding:0;margin:3mm 0 0;display:flex;flex-wrap:wrap;gap:2mm 6mm;font-size:3mm;color:#333;}
+  li{display:flex;align-items:center;gap:1.5mm;}
+  .dot{width:3mm;height:3mm;border-radius:50%;display:inline-block;}
+  .foot{position:absolute;left:6mm;right:6mm;bottom:1mm;font-size:2.6mm;color:#777;text-align:center;}
+  @media screen {
+    body{background:#eee;padding:10mm;}
+    .sheet{background:#fff;box-shadow:0 2mm 8mm rgba(0,0,0,.2);}
+    .noprint{margin:0 0 6mm;font-family:sans-serif;}
+    button{font:inherit;font-weight:700;background:#E4572E;color:#fff;border:none;padding:3mm 6mm;border-radius:2mm;cursor:pointer;}
+  }
+  @media print { .noprint{display:none;} }
+</style></head>
+<body>
+  <div class="noprint">
+    <p>Imprimí esta hoja en A4 horizontal, al 100% (sin "ajustar a la página"), y dibujá dentro del marco.</p>
+    <button onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+  <div class="sheet">
+    <div class="frame">
+      <div class="mark m-tl"><i></i></div>
+      <div class="mark m-tr"><i></i></div>
+      <div class="mark m-br"><i></i></div>
+      <div class="mark m-bl"><i></i></div>
+    </div>
+    <div class="useful">
+      <div class="draw">
+        <h1>ÑANDUTÍ PLAY — dibujá tu nivel acá</h1>
+        <p class="hint">Sacá la foto de frente, con las 4 marcas negras visibles y la franja de colores sin tapar.</p>
+        <ul><li><span class="dot" style="background:#17a34a"></span>tu personaje</li><li><span class="dot" style="background:#1f5fd0"></span>objetos a juntar</li><li><span class="dot" style="background:#d8232f"></span>peligros</li><li><span class="dot" style="background:#1b1b1b"></span>plataformas y paredes</li><li><span class="dot" style="background:#ef7d1a"></span>trampas</li><li><span class="dot" style="background:#f2c821"></span>trampolín</li><li><span class="dot" style="background:#14aec0"></span>rebote</li><li><span class="dot" style="background:#7b35c9"></span>la meta</li></ul>
+      </div>
+      <div class="strip"><div class="sw" style="background:#ffffff;border:1px solid #bbb;"></div><div class="sw" style="background:#17a34a;"></div><div class="sw" style="background:#1f5fd0;"></div><div class="sw" style="background:#d8232f;"></div><div class="sw" style="background:#1b1b1b;"></div><div class="sw" style="background:#ef7d1a;"></div><div class="sw" style="background:#f2c821;"></div><div class="sw" style="background:#14aec0;"></div><div class="sw" style="background:#7b35c9;"></div><div class="sw" style="background:#9a9a9a;"></div></div>
+    </div>
+    <div class="foot">Code Club Ñandutí · Didáctica Aumentada — no recortes las marcas de las esquinas ni la franja de colores.</div>
+  </div>
+</body></html>

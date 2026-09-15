@@ -1,0 +1,2781 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Ñandutí Play — Dibujá tu videojuego</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF6EC;
+    --paper-2:#F3ECDC;
+    --ink:#25221E;
+    --coral:#E4572E;
+    --teal:#158A80;
+    --gold:#EFA23B;
+    --violet:#6A4C93;
+    --line:#D8CDB4;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Karla',sans-serif;
+    line-height:1.5;
+    -webkit-tap-highlight-color:transparent;
+  }
+  h1,h2,h3,.display{
+    font-family:'Baloo 2',cursive;
+    font-weight:700;
+    margin:0;
+  }
+  a{color:var(--teal);}
+
+  .nandu-bg{
+    position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none;
+  }
+  .nandu-bg svg{position:absolute;opacity:.10;}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px 60px;}
+
+  header.top{
+    display:flex;align-items:center;gap:14px;
+    padding:26px 20px 10px;
+    max-width:1120px;margin:0 auto;
+  }
+  .logo{
+    width:52px;height:52px;flex:0 0 auto;
+  }
+  header.top .titles h1{font-size:1.5rem;color:var(--ink);}
+  header.top .titles p{margin:2px 0 0;font-size:.92rem;color:#6b6459;}
+
+  nav.tabs{
+    display:flex;gap:8px;flex-wrap:wrap;
+    max-width:1120px;margin:18px auto 0;padding:0 20px;
+  }
+  nav.tabs button{
+    font-family:'Baloo 2',cursive;font-size:1rem;font-weight:600;
+    background:var(--paper-2);border:2px solid transparent;color:var(--ink);
+    padding:10px 18px;border-radius:999px;cursor:pointer;
+    transition:transform .12s ease, border-color .12s ease;
+  }
+  nav.tabs button:hover{transform:translateY(-1px);}
+  nav.tabs button.active{
+    background:var(--ink);color:var(--paper);
+  }
+
+  section.panel{display:none;padding-top:26px;}
+  section.panel.active{display:block;}
+
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px;
+  }
+  .grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:22px;align-items:start;}
+  @media (max-width:860px){.grid2{grid-template-columns:1fr;}}
+
+  .legend{display:flex;flex-direction:column;gap:10px;margin-top:14px;}
+  .legend .row{display:flex;align-items:center;gap:10px;font-size:.94rem;}
+  .swatch{width:20px;height:20px;border-radius:6px;flex:0 0 auto;border:2px solid rgba(0,0,0,.15);}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;}
+  .pen-btn{
+    width:38px;height:38px;border-radius:50%;border:3px solid transparent;cursor:pointer;
+    box-shadow:0 1px 2px rgba(0,0,0,.25) inset;
+  }
+  .pen-btn.selected{border-color:var(--ink);}
+  .ghost-btn{
+    font-family:'Karla',sans-serif;font-weight:600;font-size:.88rem;
+    background:transparent;border:1.5px solid var(--ink);color:var(--ink);
+    padding:8px 14px;border-radius:10px;cursor:pointer;
+  }
+  .ghost-btn:hover{background:var(--ink);color:var(--paper);}
+  .ghost-btn.active{background:var(--ink);color:var(--paper);}
+
+  .primary-btn{
+    font-family:'Baloo 2',cursive;font-weight:700;font-size:1.02rem;
+    background:var(--coral);color:#fff;border:none;
+    padding:13px 22px;border-radius:12px;cursor:pointer;
+    box-shadow:0 3px 0 #b8431e;
+  }
+  .primary-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #b8431e;}
+  .primary-btn:disabled{background:#c9c2b3;box-shadow:none;cursor:not-allowed;}
+  .primary-btn.alt{background:var(--teal);box-shadow:0 3px 0 #0e6a62;}
+  .primary-btn.alt:active{box-shadow:0 1px 0 #0e6a62;}
+
+  #drawCanvas{
+    width:100%;aspect-ratio:8/5;background:#fff;
+    border:2px dashed var(--line);border-radius:12px;touch-action:none;cursor:crosshair;
+  }
+
+  .photo-drop{
+    border:2px dashed var(--line);border-radius:12px;padding:26px;text-align:center;
+    background:var(--paper-2);
+  }
+  .photo-drop img{max-width:100%;border-radius:8px;margin-top:14px;display:none;}
+  input[type=file]{display:none;}
+
+  .stage-wrap{position:relative;width:100%;}
+  #gameCanvas{
+    width:100%;aspect-ratio:8/5;background:#eef3f0;border-radius:12px;
+    border:2px solid var(--ink);touch-action:none;display:block;
+  }
+  .hud{
+    position:absolute;top:10px;left:10px;right:10px;
+    display:flex;justify-content:space-between;
+    font-family:'Baloo 2',cursive;font-weight:600;color:#fff;
+    text-shadow:0 1px 3px rgba(0,0,0,.5);pointer-events:none;font-size:1.1rem;
+  }
+  .overlay{
+    position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(20,18,14,.72);border-radius:12px;color:#fff;text-align:center;gap:12px;padding:20px;
+  }
+  .overlay.show{display:flex;}
+  .overlay h3{font-size:1.6rem;color:#fff;}
+
+  .touch-controls{
+    display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px;
+  }
+  .dpad{display:flex;gap:10px;}
+  .tbtn{
+    width:64px;height:64px;border-radius:16px;border:none;
+    background:var(--ink);color:var(--paper);font-size:1.6rem;
+    display:flex;align-items:center;justify-content:center;user-select:none;
+  }
+  .tbtn.jump{background:var(--gold);color:var(--ink);}
+
+  .examples-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;margin-top:16px;}
+  .ex-card{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;}
+  .ex-card canvas{width:100%;display:block;background:#fff;}
+  .ex-card .body{padding:12px 14px;}
+  .ex-card h4{font-family:'Baloo 2',cursive;margin:0 0 4px;}
+  .ex-card p{margin:0 0 10px;font-size:.86rem;color:#6b6459;}
+
+  footer{
+    margin-top:60px;padding:26px 20px 40px;border-top:1px solid var(--line);
+    max-width:1120px;margin-left:auto;margin-right:auto;
+    display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center;
+    font-size:.88rem;color:#6b6459;
+  }
+  footer .credit{max-width:520px;}
+  footer .social{display:flex;gap:14px;}
+  footer .social a{
+    display:inline-flex;align-items:center;gap:6px;color:var(--ink);text-decoration:none;font-weight:600;
+    border:1px solid var(--line);padding:7px 12px;border-radius:999px;
+  }
+  footer .social a:hover{background:var(--paper-2);}
+  footer .social svg{width:16px;height:16px;}
+
+  .msg{font-size:.9rem;color:#6b6459;margin-top:8px;min-height:1.2em;}
+  .note{font-size:.86rem;background:#FFF7E4;border:1px solid #F0DBA6;padding:10px 12px;border-radius:10px;margin-top:12px;}
+</style>
+</head>
+<body>
+
+<div class="nandu-bg" id="nanduBg"></div>
+
+<header class="top">
+  <svg class="logo" viewBox="0 0 100 100" aria-hidden="true">
+    <circle cx="50" cy="50" r="46" fill="none" stroke="#E4572E" stroke-width="2"/>
+    <circle cx="50" cy="50" r="34" fill="none" stroke="#158A80" stroke-width="2"/>
+    <circle cx="50" cy="50" r="22" fill="none" stroke="#EFA23B" stroke-width="2"/>
+    <g stroke="#6A4C93" stroke-width="1.6">
+      <line x1="50" y1="4" x2="50" y2="96"/><line x1="4" y1="50" x2="96" y2="50"/>
+      <line x1="16" y1="16" x2="84" y2="84"/><line x1="84" y1="16" x2="16" y2="84"/>
+    </g>
+    <circle cx="50" cy="50" r="6" fill="#E4572E"/>
+  </svg>
+  <div class="titles">
+    <h1>Ñandutí Play</h1>
+    <p>Dibujá tu videojuego en papel, sacale una foto y jugalo</p>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button data-panel="crear" class="active">✏️ Crear</button>
+  <button data-panel="jugar">🎮 Jugar</button>
+  <button data-panel="ejemplos">✨ Ejemplos</button>
+  <button data-panel="ayuda">❓ Cómo funciona</button>
+</nav>
+
+<div class="wrap">
+
+  <!-- CREAR -->
+  <section class="panel active" id="panel-crear">
+    <div class="grid2">
+      <div class="card">
+        <h2>1. Dibujá o subí una foto</h2>
+        <p style="margin-top:6px;color:#6b6459">Elegí una pluma y dibujá directamente acá, o subí la foto de un dibujo hecho en papel.</p>
+
+        <div style="display:flex;gap:8px;margin:16px 0 4px;">
+          <button class="ghost-btn" id="modeDrawBtn">Dibujar en pantalla</button>
+          <button class="ghost-btn" id="modePhotoBtn">Usar foto</button>
+        </div>
+
+        <div style="margin:14px 0 4px;">
+          <p style="margin:0 0 6px;font-size:.9rem;color:#6b6459;">¿Qué tipo de juego querés armar con el dibujo?</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="ghost-btn active" id="gmPlatform">🏃 Plataformas</button>
+            <button class="ghost-btn" id="gmMaze">👻 Laberinto</button>
+            <button class="ghost-btn" id="gmPong">🏓 2 jugadores</button>
+          </div>
+          <p class="note" id="gameModeHint" style="margin-top:6px;">Saltás de plataforma en plataforma, juntás objetos y llegás a la meta.</p>
+        </div>
+
+        <div id="drawMode">
+          <div class="toolbar" id="penToolbar"></div>
+          <canvas id="drawCanvas" width="960" height="600"></canvas>
+          <div class="toolbar" style="margin-top:10px;">
+            <button class="ghost-btn" id="clearDrawBtn">🗑️ Borrar todo</button>
+            <label style="font-size:.86rem;display:flex;align-items:center;gap:6px;">Grosor
+              <input type="range" id="brushSize" min="3" max="18" value="7">
+            </label>
+          </div>
+        </div>
+
+        <div id="photoMode" style="display:none;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+            <button class="ghost-btn" id="printTemplateBtn">🖨️ Imprimir plantilla</button>
+            <span class="note" style="margin:0;">Con la plantilla, la app encuentra la hoja sola y calibra los colores según la luz.</span>
+          </div>
+          <div class="photo-drop" id="photoDrop">
+            <p style="margin:0 0 12px;">Sacá una foto de tu dibujo en papel (con buena luz, papel bien encuadrado)</p>
+            <button class="ghost-btn" id="photoBtn">📷 Elegir foto</button>
+            <input type="file" id="photoInput" accept="image/*" capture="environment">
+            <img id="photoPreview" alt="Vista previa de tu dibujo">
+          </div>
+
+          <div id="cropBox" style="display:none;margin-top:14px;">
+            <p style="margin:0 0 8px;font-size:.9rem;color:#6b6459;">
+              Arrastrá las <b>4 esquinas</b> para marcar sólo la hoja. Se corrige la perspectiva
+              y todo lo que quede afuera (manos, marcadores, la mesa) se ignora.
+            </p>
+            <canvas id="cropCanvas" style="width:100%;border-radius:12px;border:2px solid var(--ink);touch-action:none;display:block;background:#111;"></canvas>
+            <div class="toolbar" style="margin-top:10px;">
+              <button class="ghost-btn" id="autoCropBtn">✨ Detectar hoja</button>
+              <button class="ghost-btn" id="fullCropBtn">⛶ Usar foto completa</button>
+            </div>
+            <p class="msg" id="tplStatus" style="margin-top:8px;"></p>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <button class="primary-btn" id="buildBtn">🕹️ Crear juego</button>
+          <span class="msg" id="buildMsg"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Guía de colores</h2>
+        <p style="margin-top:6px;color:#6b6459;font-size:.92rem;">Cada color que dibujes se convierte en algo distinto dentro del juego:</p>
+        <div class="legend">
+          <div class="row"><span class="swatch" style="background:#1c1c1c"></span> Negro / gris oscuro → plataformas y paredes</div>
+          <div class="row"><span class="swatch" style="background:#2fae4e"></span> Verde → dónde empieza tu personaje</div>
+          <div class="row"><span class="swatch" style="background:#2f6fe4"></span> Azul → objetos para juntar (suman puntos)</div>
+          <div class="row"><span class="swatch" style="background:#e0333f"></span> Rojo → peligros, te quitan una vida</div>
+          <div class="row"><span class="swatch" style="background:#f07d1c"></span> Naranja → trampas, te mandan al inicio</div>
+          <div class="row"><span class="swatch" style="background:#f4d13d"></span> Amarillo → trampolín, pega un salto enorme</div>
+          <div class="row"><span class="swatch" style="background:#17b6c4"></span> Celeste → rebote tipo pinball, suma puntos extra</div>
+          <div class="row"><span class="swatch" style="background:#8b3fd4"></span> Violeta → la meta, ¡llegá ahí para ganar!</div>
+        </div>
+        <p class="note">Dibujá sobre fondo blanco y usá trazos gruesos y bien separados: así la app reconoce mejor cada elemento.</p>
+        <p class="note">Para la foto: papel bien plano y de frente, con buena luz, sin sombras fuertes ni la mano o los marcadores tapando el dibujo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- JUGAR -->
+  <section class="panel" id="panel-jugar">
+    <div class="card">
+      <h2 id="playTitle">Tu juego</h2>
+      <div class="stage-wrap">
+        <canvas id="gameCanvas" width="960" height="600"></canvas>
+        <div class="hud"><span id="hudScore">⭐ 0</span><span id="hudGoal" style="opacity:.9"></span></div>
+        <div class="overlay" id="gameOverlay">
+          <h3 id="overlayTitle">¡Listo!</h3>
+          <p id="overlayText"></p>
+          <button class="primary-btn" id="overlayRetry">Jugar de nuevo</button>
+        </div>
+      </div>
+      <div class="touch-controls">
+        <div class="dpad" id="dpadWrap">
+          <button class="tbtn" id="btnLeft">◀</button>
+          <button class="tbtn" id="btnUp" style="display:none;">▲</button>
+          <button class="tbtn" id="btnDown" style="display:none;">▼</button>
+          <button class="tbtn" id="btnRight">▶</button>
+        </div>
+        <button class="tbtn" id="btnMute" title="Silenciar sonido" style="background:var(--paper-2);color:var(--ink);border:2px solid var(--ink);">🔊</button>
+        <button class="tbtn jump" id="btnJump">⤒</button>
+      </div>
+      <p class="msg" id="controlsHint">Movete con las flechas o A/D, saltá con espacio o ▲ — también podés usar los botones táctiles.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;">
+        <button class="primary-btn alt" id="downloadBtn">⬇️ Descargar juego en HTML</button>
+        <span class="msg" id="downloadMsg"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- EJEMPLOS -->
+  <section class="panel" id="panel-ejemplos">
+    <div class="card">
+      <h2>Ejemplos para probar</h2>
+      <p style="margin-top:6px;color:#6b6459;">Miralos primero y despues intentá dibujar los tuyos.</p>
+      <div class="examples-grid" id="examplesGrid"></div>
+    </div>
+  </section>
+
+  <!-- AYUDA -->
+  <section class="panel" id="panel-ayuda">
+    <div class="card">
+      <h2>¿Cómo funciona?</h2>
+      <ol style="padding-left:20px;line-height:1.8;">
+        <li>Dibujá un nivel en una hoja de papel (o directamente en la pantalla) usando los colores de la guía: plataformas, tu personaje, objetos, peligros, trampas, trampolines y rebotes de pinball.</li>
+        <li>Si querés el mejor resultado, tocá <strong>Imprimir plantilla</strong> y dibujá dentro del marco: tiene marcas en las esquinas y una franja de colores que la app usa para corregir la luz.</li>
+        <li>Sacale una foto con buena luz, o subí el dibujo hecho en pantalla.</li>
+        <li><strong>Marcá las 4 esquinas de la hoja</strong>: la app endereza la perspectiva y descarta la mesa, las manos y los marcadores. El botón <em>Detectar hoja</em> intenta hacerlo solo.</li>
+        <li>Tocá <strong>Crear juego</strong>: la app analiza los colores y arma las plataformas, el personaje, los objetos, los peligros y la meta. <strong>Tus trazos se recortan y se usan tal cual como sprites</strong>, así que el juego se ve con tu propio dibujo.</li>
+        <li>Jugalo en la pestaña <strong>Jugar</strong>, con teclado o con los botones táctiles.</li>
+        <li>Si te gustó, tocá <strong>Descargar juego en HTML</strong> para guardar un archivo que podés compartir o abrir sin conexión.</li>
+      </ol>
+      <p class="note">La app funciona en el navegador, sin instalar nada, y en cualquier celular, tablet o computadora.</p>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="credit">
+    Creado para la educación por <strong>Code Club Ñandutí</strong> y <strong>Didáctica Aumentada</strong>. Una herramienta libre para acercar la programación y la creatividad a chicas y chicos.
+  </div>
+  <div class="social">
+    <a href="https://www.instagram.com/codeclubnanduti" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+      Code Club Ñandutí
+    </a>
+    <a href="https://www.instagram.com/didactica_aumentada3.0" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+      Didáctica Aumentada
+    </a>
+  </div>
+</footer>
+
+<script>
+/* ======================================================================
+   NANDUTI PLAY — motor del juego + análisis de dibujos + interfaz
+   ====================================================================== */
+
+const LEVEL_W = 960, LEVEL_H = 600;
+
+/* ---------- utilidades de color ---------- */
+function rgbToHsl(r,g,b){
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h=0,s=0,l=(max+min)/2;
+  const d=max-min;
+  if(d!==0){
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h=(g-b)/d + (g<b?6:0); break;
+      case g: h=(b-r)/d + 2; break;
+      case b: h=(r-g)/d + 4; break;
+    }
+    h*=60;
+  }
+  return {h,s,l};
+}
+
+// Cuando la foto incluye la franja de calibración de la plantilla, guardamos acá
+// los colores reales medidos y clasificamos por cercanía en vez de por rangos fijos.
+// Así el mismo dibujo funciona con luz cálida, fría o con sombra.
+let COLOR_CALIB = null;
+
+const CALIB_ORDER = ['white','player','collect','hazard','platform','trap','trampoline','bumper','goal','gray'];
+
+function classifyByRanges(r,g,b){
+  const {h,s,l} = rgbToHsl(r,g,b);
+  if(l > 0.86) return 'bg';
+  if(s < 0.18){
+    return l < 0.42 ? 'platform' : 'bg';
+  }
+  if(h < 14 || h >= 345) return 'hazard';      // rojo
+  if(h < 42) return 'trap';                     // naranja
+  if(h < 65) return 'trampoline';                // amarillo
+  if(h < 160) return 'player';                   // verde
+  if(h < 200) return 'bumper';                   // celeste
+  if(h < 255) return 'collect';                  // azul
+  return 'goal';                                 // violeta
+}
+
+function classifyByCalib(r,g,b){
+  const cal = COLOR_CALIB;
+  // balance de blancos con el parche blanco de la plantilla
+  const rr = Math.min(255, r*cal.gain.r), gg = Math.min(255, g*cal.gain.g), bb = Math.min(255, b*cal.gain.b);
+  const {s,l} = rgbToHsl(rr,gg,bb);
+  if(l > 0.85 && s < 0.22) return 'bg';          // papel
+  let best = null, bestD = Infinity;
+  for(const key of CALIB_ORDER){
+    const ref = cal.refs[key];
+    if(!ref) continue;
+    const d = (ref.r-rr)*(ref.r-rr) + (ref.g-gg)*(ref.g-gg) + (ref.b-bb)*(ref.b-bb);
+    if(d < bestD){ bestD = d; best = key; }
+  }
+  if(best === 'white' || best === 'gray') return 'bg';
+  // si nada se parece lo suficiente, decidimos por brillo
+  if(bestD > 118*118) return l < 0.45 ? 'platform' : 'bg';
+  return best;
+}
+
+function classifyPixel(r,g,b){
+  return COLOR_CALIB ? classifyByCalib(r,g,b) : classifyByRanges(r,g,b);
+}
+
+/* ---------- análisis de imagen -> nivel jugable ---------- */
+function imageToLevel(sourceCanvas){
+  const gridW = 480;
+  const scale = gridW / sourceCanvas.width;
+  const gridH = Math.max(1, Math.round(sourceCanvas.height * scale));
+
+  const work = document.createElement('canvas');
+  work.width = gridW; work.height = gridH;
+  const wctx = work.getContext('2d');
+  wctx.drawImage(sourceCanvas, 0, 0, gridW, gridH);
+  const data = wctx.getImageData(0,0,gridW,gridH).data;
+
+  const cats = ['platform','player','hazard','collect','goal','trap','trampoline','bumper'];
+  const mask = {};
+  cats.forEach(c => mask[c] = new Uint8Array(gridW*gridH));
+
+  // categorías que NO son parte del fondo estático (se recortan como sprites
+  // y se "borran" del fondo para poder moverlas/animarlas en el juego)
+  const eraseCats = ['player','hazard','collect','goal','trap','bumper'];
+  const eraseMask = new Uint8Array(gridW*gridH);
+
+  let paperSumR=0, paperSumG=0, paperSumB=0, paperCount=0;
+
+  for(let i=0;i<gridW*gridH;i++){
+    const px = i*4;
+    const cat = classifyPixel(data[px], data[px+1], data[px+2]);
+    if(cat !== 'bg'){
+      mask[cat][i] = 1;
+      if(eraseCats.includes(cat)) eraseMask[i] = 1;
+    } else {
+      paperSumR += data[px]; paperSumG += data[px+1]; paperSumB += data[px+2]; paperCount++;
+    }
+  }
+
+  const paperColor = paperCount
+    ? {r:Math.round(paperSumR/paperCount), g:Math.round(paperSumG/paperCount), b:Math.round(paperSumB/paperCount)}
+    : {r:245,g:240,b:224};
+
+  // recorta un sprite (PNG con transparencia) a partir del dibujo real,
+  // usando el bounding box de un blob más un pequeño margen
+  function cropSprite(minX,maxX,minY,maxY,pad){
+    pad = pad==null ? 2 : pad;
+    const x0 = Math.max(0,minX-pad), y0 = Math.max(0,minY-pad);
+    const x1 = Math.min(gridW-1,maxX+pad), y1 = Math.min(gridH-1,maxY+pad);
+    const w = x1-x0+1, h = y1-y0+1;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const cctx = c.getContext('2d');
+    const out = cctx.createImageData(w,h);
+    for(let yy=0;yy<h;yy++){
+      for(let xx=0;xx<w;xx++){
+        const sxp = x0+xx, syp = y0+yy;
+        const si = (syp*gridW+sxp)*4, di = (yy*w+xx)*4;
+        const r=data[si], g=data[si+1], b=data[si+2];
+        if(classifyPixel(r,g,b) === 'bg'){
+          out.data[di+3] = 0;
+        } else {
+          out.data[di]=r; out.data[di+1]=g; out.data[di+2]=b; out.data[di+3]=255;
+        }
+      }
+    }
+    cctx.putImageData(out,0,0);
+    return { url:c.toDataURL('image/png'), w:w*(LEVEL_W/gridW), h:h*(LEVEL_H/gridH) };
+  }
+
+  function findBlobs(maskArr){
+    const visited = new Uint8Array(gridW*gridH);
+    const blobs = [];
+    for(let y=0;y<gridH;y++){
+      for(let x=0;x<gridW;x++){
+        const idx = y*gridW+x;
+        if(!maskArr[idx] || visited[idx]) continue;
+        // BFS
+        let minX=x,maxX=x,minY=y,maxY=y,count=0,sumX=0,sumY=0;
+        const stack=[idx]; visited[idx]=1;
+        while(stack.length){
+          const cur = stack.pop();
+          const cy = Math.floor(cur/gridW), cx = cur % gridW;
+          count++; sumX+=cx; sumY+=cy;
+          if(cx<minX)minX=cx; if(cx>maxX)maxX=cx;
+          if(cy<minY)minY=cy; if(cy>maxY)maxY=cy;
+          const neighbors = [
+            [cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]
+          ];
+          for(const [nx,ny] of neighbors){
+            if(nx<0||ny<0||nx>=gridW||ny>=gridH) continue;
+            const nIdx = ny*gridW+nx;
+            if(maskArr[nIdx] && !visited[nIdx]){
+              visited[nIdx]=1; stack.push(nIdx);
+            }
+          }
+        }
+        if(count >= 2){
+          blobs.push({minX,maxX,minY,maxY,count,cx:sumX/count,cy:sumY/count});
+        }
+      }
+    }
+    return blobs;
+  }
+
+  // Une blobs cercanos: la nube de circulitos morados o una estrella hecha con
+  // varios trazos sueltos pasan a ser UN objeto, como hace Pixicade.
+  function mergeBlobs(blobs, gap){
+    gap = gap==null ? 5 : gap;
+    let list = blobs.map(b=>Object.assign({},b));
+    let merged = true;
+    let guard = 0;
+    while(merged && guard++ < 12){
+      merged = false;
+      for(let i=0;i<list.length;i++){
+        if(!list[i]) continue;
+        for(let j=i+1;j<list.length;j++){
+          if(!list[j]) continue;
+          const a=list[i], b=list[j];
+          const near = a.minX-gap <= b.maxX && b.minX-gap <= a.maxX &&
+                       a.minY-gap <= b.maxY && b.minY-gap <= a.maxY;
+          if(!near) continue;
+          const count = a.count + b.count;
+          list[i] = {
+            minX: Math.min(a.minX,b.minX), maxX: Math.max(a.maxX,b.maxX),
+            minY: Math.min(a.minY,b.minY), maxY: Math.max(a.maxY,b.maxY),
+            count,
+            cx: (a.cx*a.count + b.cx*b.count)/count,
+            cy: (a.cy*a.count + b.cy*b.count)/count
+          };
+          list[j] = null;
+          merged = true;
+        }
+      }
+      list = list.filter(Boolean);
+    }
+    return list;
+  }
+
+  // Se queda con los N más grandes y descarta manchitas de ruido de la foto.
+  function topBlobs(blobs, max, minCount){
+    return blobs
+      .filter(b => b.count >= (minCount||8))
+      .sort((a,b)=>b.count-a.count)
+      .slice(0, max);
+  }
+
+  const sx = LEVEL_W / gridW, sy = LEVEL_H / gridH;
+  const bboxCenter = b => ({x:(b.minX+b.maxX)/2*sx, y:(b.minY+b.maxY)/2*sy});
+  const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
+
+  const platformBlobs = mergeBlobs(findBlobs(mask.platform), 2).filter(b => b.count >= 6);
+  const platforms = platformBlobs.map(b => ({
+    x: b.minX*sx,
+    y: b.minY*sy,
+    w: Math.max((b.maxX-b.minX+1)*sx, 14),
+    h: Math.max((b.maxY-b.minY+1)*sy, 14)
+  }));
+
+  const trampolineBlobs = findBlobs(mask.trampoline).filter(b => b.count >= 3);
+  trampolineBlobs.forEach(b => platforms.push({
+    x: b.minX*sx,
+    y: b.minY*sy,
+    w: Math.max((b.maxX-b.minX+1)*sx, 14),
+    h: Math.max((b.maxY-b.minY+1)*sy, 14),
+    bounce: true
+  }));
+
+  // safety floor so the level is always playable
+  platforms.push({x:0, y:LEVEL_H-14, w:LEVEL_W, h:14, floor:true});
+
+  // --- grilla de paredes para el modo laberinto ---
+  // cada celda es pared si tiene suficientes pixeles de trazo oscuro
+  const MAZE_COLS = 40, MAZE_ROWS = 25;
+  const cellPxW = gridW / MAZE_COLS, cellPxH = gridH / MAZE_ROWS;
+  const walls = [];
+  for(let ry=0; ry<MAZE_ROWS; ry++){
+    const row = [];
+    for(let rx=0; rx<MAZE_COLS; rx++){
+      let hits = 0, total = 0;
+      const x0 = Math.floor(rx*cellPxW), x1 = Math.floor((rx+1)*cellPxW);
+      const y0 = Math.floor(ry*cellPxH), y1 = Math.floor((ry+1)*cellPxH);
+      for(let yy=y0; yy<y1; yy++){
+        for(let xx=x0; xx<x1; xx++){
+          total++;
+          if(mask.platform[yy*gridW+xx]) hits++;
+        }
+      }
+      row.push(total && hits/total > 0.16 ? 1 : 0);
+    }
+    walls.push(row);
+  }
+  // borde exterior siempre cerrado, así nadie se escapa del tablero
+  for(let rx=0; rx<MAZE_COLS; rx++){ walls[0][rx]=1; walls[MAZE_ROWS-1][rx]=1; }
+  for(let ry=0; ry<MAZE_ROWS; ry++){ walls[ry][0]=1; walls[ry][MAZE_COLS-1]=1; }
+
+  // --- fondo "limpio": el dibujo real, sin los elementos que se mueven ---
+  const bgData = new Uint8ClampedArray(data);
+  for(let y=0;y<gridH;y++){
+    for(let x=0;x<gridW;x++){
+      const idx = y*gridW+x;
+      let erase = !!eraseMask[idx];
+      if(!erase){
+        // dilatamos 1px para tapar el borde suavizado del trazo original
+        for(const [nx,ny] of [[x+1,y],[x-1,y],[x,y+1],[x,y-1]]){
+          if(nx<0||ny<0||nx>=gridW||ny>=gridH) continue;
+          if(eraseMask[ny*gridW+nx]){ erase = true; break; }
+        }
+      }
+      if(erase){
+        const px = idx*4;
+        bgData[px]=paperColor.r; bgData[px+1]=paperColor.g; bgData[px+2]=paperColor.b; bgData[px+3]=255;
+      }
+    }
+  }
+  const bgCanvas = document.createElement('canvas');
+  bgCanvas.width = gridW; bgCanvas.height = gridH;
+  bgCanvas.getContext('2d').putImageData(new ImageData(bgData, gridW, gridH), 0, 0);
+  const bgImage = bgCanvas.toDataURL('image/png');
+
+  const playerBlobs = mergeBlobs(findBlobs(mask.player), 5).sort((a,b)=>b.count-a.count);
+  let player, playerSprite=null, playerSpriteDims=null, playerSize=null;
+  if(playerBlobs.length && playerBlobs[0].count >= 6){
+    const b = playerBlobs[0];
+    player = bboxCenter(b);
+    const spr = cropSprite(b.minX,b.maxX,b.minY,b.maxY,3);
+    playerSprite = spr.url;
+    // el muñeco se escala a una altura jugable manteniendo su proporción
+    const targetH = clamp(spr.h, 30, 64);
+    const k = targetH / spr.h;
+    playerSpriteDims = {w:spr.w*k, h:targetH};
+    playerSize = {
+      w: clamp(spr.w*k*0.72, 16, 52),
+      h: clamp(targetH*0.9, 22, 58)
+    };
+  } else {
+    player = {x:60, y:LEVEL_H-80};
+  }
+
+  const collectBlobs = topBlobs(mergeBlobs(findBlobs(mask.collect), 4), 24, 10);
+  const collectibles = collectBlobs.map(b => {
+    const c = bboxCenter(b);
+    const spr = cropSprite(b.minX,b.maxX,b.minY,b.maxY,2);
+    const r = clamp(Math.min(spr.w,spr.h)/2, 9, 48);
+    return {x:c.x, y:c.y, r, sprite:spr.url, spriteW:spr.w, spriteH:spr.h};
+  });
+
+  const hazardBlobs = topBlobs(mergeBlobs(findBlobs(mask.hazard), 4), 14, 12);
+  const hazards = hazardBlobs.map(b => {
+    const c = bboxCenter(b);
+    const spr = cropSprite(b.minX,b.maxX,b.minY,b.maxY,2);
+    const r = clamp(Math.min(spr.w,spr.h)/2, 10, 52);
+    return {x:c.x, y:c.y, r, sprite:spr.url, spriteW:spr.w, spriteH:spr.h};
+  });
+
+  const trapBlobs = topBlobs(mergeBlobs(findBlobs(mask.trap), 4), 10, 12);
+  const traps = trapBlobs.map(b => {
+    const c = bboxCenter(b);
+    const spr = cropSprite(b.minX,b.maxX,b.minY,b.maxY,2);
+    const r = clamp(Math.min(spr.w,spr.h)/2, 10, 52);
+    return {x:c.x, y:c.y, r, sprite:spr.url, spriteW:spr.w, spriteH:spr.h};
+  });
+
+  const bumperBlobs = topBlobs(mergeBlobs(findBlobs(mask.bumper), 4), 10, 12);
+  const bumpers = bumperBlobs.map(b => {
+    const c = bboxCenter(b);
+    const spr = cropSprite(b.minX,b.maxX,b.minY,b.maxY,2);
+    const r = clamp(Math.min(spr.w,spr.h)/2, 12, 54);
+    return {x:c.x, y:c.y, r, sprite:spr.url, spriteW:spr.w, spriteH:spr.h};
+  });
+
+  const goalBlobs = mergeBlobs(findBlobs(mask.goal), 5).sort((a,b)=>b.count-a.count);
+  let goal;
+  if(goalBlobs.length){
+    const b = goalBlobs[0];
+    const c = bboxCenter(b);
+    const spr = cropSprite(b.minX,b.maxX,b.minY,b.maxY,3);
+    const r = clamp(Math.min(spr.w,spr.h)/2, 16, 70);
+    goal = {x:c.x, y:c.y, r, sprite:spr.url, spriteW:spr.w, spriteH:spr.h};
+  } else {
+    goal = {x:LEVEL_W-60, y:LEVEL_H-100, r:20};
+  }
+
+  return {
+    w:LEVEL_W, h:LEVEL_H, platforms, player, collectibles, hazards, traps, bumpers, goal,
+    bgImage, playerSprite, playerSpriteDims, playerSize,
+    maze: {cols:MAZE_COLS, rows:MAZE_ROWS, walls}
+  };
+}
+
+
+/* ======================================================================
+   ENCUADRE DE LA HOJA (4 esquinas + corrección de perspectiva)
+   ====================================================================== */
+
+// resuelve un sistema lineal de 8x8 por eliminación gaussiana
+function solve8(A, b){
+  const n = 8;
+  const M = A.map((row,i)=>row.concat([b[i]]));
+  for(let col=0; col<n; col++){
+    let piv = col;
+    for(let r=col+1;r<n;r++) if(Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
+    if(Math.abs(M[piv][col]) < 1e-10) return null;
+    const tmp = M[col]; M[col] = M[piv]; M[piv] = tmp;
+    for(let r=0;r<n;r++){
+      if(r===col) continue;
+      const f = M[r][col]/M[col][col];
+      for(let c=col;c<=n;c++) M[r][c] -= f*M[col][c];
+    }
+  }
+  return M.map((row,i)=>row[n]/row[i]);
+}
+
+// homografía que lleva el rectángulo destino (w x h) a las 4 esquinas de origen
+function homographyRectToQuad(w, h, quad){
+  const dst = [[0,0],[w,0],[w,h],[0,h]];
+  const A = [], b = [];
+  for(let i=0;i<4;i++){
+    const [x,y] = dst[i];
+    const [u,v] = [quad[i].x, quad[i].y];
+    A.push([x,y,1,0,0,0,-x*u,-y*u]); b.push(u);
+    A.push([0,0,0,x,y,1,-x*v,-y*v]); b.push(v);
+  }
+  const h8 = solve8(A,b);
+  if(!h8) return null;
+  return [h8[0],h8[1],h8[2],h8[3],h8[4],h8[5],h8[6],h8[7],1];
+}
+
+// devuelve un canvas rectificado del área marcada por las 4 esquinas
+function warpQuad(img, quad, outW, outH){
+  const src = document.createElement('canvas');
+  src.width = img.naturalWidth || img.width;
+  src.height = img.naturalHeight || img.height;
+  const sctx = src.getContext('2d');
+  sctx.drawImage(img,0,0);
+  const sdata = sctx.getImageData(0,0,src.width,src.height).data;
+
+  const H = homographyRectToQuad(outW, outH, quad);
+  const out = document.createElement('canvas');
+  out.width = outW; out.height = outH;
+  const octx = out.getContext('2d');
+  if(!H){ octx.drawImage(img,0,0,outW,outH); return out; }
+
+  const img2 = octx.createImageData(outW, outH);
+  const d = img2.data;
+  for(let y=0;y<outH;y++){
+    for(let x=0;x<outW;x++){
+      const den = H[6]*x + H[7]*y + H[8];
+      const u = (H[0]*x + H[1]*y + H[2]) / den;
+      const v = (H[3]*x + H[4]*y + H[5]) / den;
+      const di = (y*outW + x)*4;
+      const ui = Math.round(u), vi = Math.round(v);
+      if(ui < 0 || vi < 0 || ui >= src.width || vi >= src.height){
+        d[di]=255; d[di+1]=255; d[di+2]=255; d[di+3]=255;
+        continue;
+      }
+      const si = (vi*src.width + ui)*4;
+      d[di]=sdata[si]; d[di+1]=sdata[si+1]; d[di+2]=sdata[si+2]; d[di+3]=255;
+    }
+  }
+  octx.putImageData(img2,0,0);
+  return out;
+}
+
+// busca automáticamente la hoja: la mancha clara y poco saturada más grande
+function detectSheetQuad(img){
+  const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height;
+  const sw = 200, sh = Math.max(1, Math.round(H * (sw/W)));
+  const c = document.createElement('canvas');
+  c.width = sw; c.height = sh;
+  c.getContext('2d').drawImage(img,0,0,sw,sh);
+  const data = c.getContext('2d').getImageData(0,0,sw,sh).data;
+
+  // umbral adaptativo: nos quedamos con el 40% más brillante y poco saturado
+  const lums = [];
+  for(let i=0;i<sw*sh;i++){
+    const px=i*4;
+    lums.push((data[px]+data[px+1]+data[px+2])/3);
+  }
+  const sorted = lums.slice().sort((a,b)=>a-b);
+  const thr = Math.max(150, sorted[Math.floor(sorted.length*0.6)]);
+
+  const mask = new Uint8Array(sw*sh);
+  for(let i=0;i<sw*sh;i++){
+    const px=i*4, r=data[px], g=data[px+1], b=data[px+2];
+    const mx=Math.max(r,g,b), mn=Math.min(r,g,b);
+    if(lums[i] >= thr && (mx-mn) < 42) mask[i] = 1;
+  }
+
+  // componente conexa más grande
+  const visited = new Uint8Array(sw*sh);
+  let best = null;
+  for(let i=0;i<sw*sh;i++){
+    if(!mask[i] || visited[i]) continue;
+    const stack=[i]; visited[i]=1;
+    const pts=[];
+    while(stack.length){
+      const cur = stack.pop();
+      const cy = Math.floor(cur/sw), cx = cur%sw;
+      pts.push([cx,cy]);
+      const nb=[[cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]];
+      for(const [nx,ny] of nb){
+        if(nx<0||ny<0||nx>=sw||ny>=sh) continue;
+        const ni=ny*sw+nx;
+        if(mask[ni] && !visited[ni]){ visited[ni]=1; stack.push(ni); }
+      }
+    }
+    if(!best || pts.length > best.length) best = pts;
+  }
+  if(!best || best.length < sw*sh*0.05) return null;
+
+  // esquinas = extremos de x+y y x-y dentro de la mancha
+  let tl=best[0], tr=best[0], br=best[0], bl=best[0];
+  for(const pt of best){
+    if(pt[0]+pt[1] < tl[0]+tl[1]) tl = pt;
+    if(pt[0]+pt[1] > br[0]+br[1]) br = pt;
+    if(pt[0]-pt[1] > tr[0]-tr[1]) tr = pt;
+    if(pt[0]-pt[1] < bl[0]-bl[1]) bl = pt;
+  }
+  const k = W/sw;
+  return [tl,tr,br,bl].map(pt => ({x: pt[0]*k, y: pt[1]*k}));
+}
+
+
+/* ======================================================================
+   PLANTILLA IMPRESA: marcas de esquina y franja de calibración de color
+   ====================================================================== */
+
+// Proporciones de la plantilla: el área marcada por las 4 esquinas incluye
+// la zona de dibujo (arriba) y la franja de colores (abajo).
+const TPL_PLAY_RATIO = 0.88;      // 88% de la altura marcada es zona de dibujo
+const TPL_OUT_W = 960;
+const TPL_OUT_H = Math.round(600 / TPL_PLAY_RATIO);   // 682
+
+// Busca las 4 marcas negras cuadradas de la plantilla y devuelve sus centros.
+// Si no las encuentra todas, devuelve null y se usa la detección de hoja común.
+function detectCornerMarks(img){
+  const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height;
+  const sw = 300, sh = Math.max(1, Math.round(H*(sw/W)));
+  const c = document.createElement('canvas');
+  c.width = sw; c.height = sh;
+  const cctx = c.getContext('2d');
+  cctx.drawImage(img, 0, 0, sw, sh);
+  const data = cctx.getImageData(0,0,sw,sh).data;
+
+  const dark = new Uint8Array(sw*sh);
+  for(let i=0;i<sw*sh;i++){
+    const px = i*4;
+    const l = (data[px]+data[px+1]+data[px+2])/3;
+    const mx = Math.max(data[px],data[px+1],data[px+2]);
+    const mn = Math.min(data[px],data[px+1],data[px+2]);
+    if(l < 95 && (mx-mn) < 60) dark[i] = 1;
+  }
+
+  // blobs oscuros
+  const visited = new Uint8Array(sw*sh);
+  const blobs = [];
+  for(let i=0;i<sw*sh;i++){
+    if(!dark[i] || visited[i]) continue;
+    const stack=[i]; visited[i]=1;
+    let minX=sw, maxX=0, minY=sh, maxY=0, count=0, sumX=0, sumY=0;
+    while(stack.length){
+      const cur = stack.pop();
+      const cy = Math.floor(cur/sw), cx = cur%sw;
+      count++; sumX+=cx; sumY+=cy;
+      if(cx<minX)minX=cx; if(cx>maxX)maxX=cx;
+      if(cy<minY)minY=cy; if(cy>maxY)maxY=cy;
+      for(const [nx,ny] of [[cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]]){
+        if(nx<0||ny<0||nx>=sw||ny>=sh) continue;
+        const ni = ny*sw+nx;
+        if(dark[ni] && !visited[ni]){ visited[ni]=1; stack.push(ni); }
+      }
+    }
+    const bw = maxX-minX+1, bh = maxY-minY+1;
+    const aspect = bw/bh;
+    const fill = count/(bw*bh);
+    // cuadrados bien rellenos; el tope de tamaño es holgado porque con
+    // perspectiva la marca más cercana a la cámara se ve bastante más grande
+    if(bw >= 5 && bw <= sw*0.22 && bh >= 4 && aspect > 0.5 && aspect < 2.0 && fill > 0.35){
+      blobs.push({cx:sumX/count, cy:sumY/count, size:Math.max(bw,bh), count});
+    }
+  }
+  if(blobs.length < 4) return null;
+
+  // una marca por esquina: la más cercana a cada vértice de la imagen
+  const corners = [[0,0],[sw,0],[sw,sh],[0,sh]];
+  const picked = [];
+  for(const [qx,qy] of corners){
+    let best = null, bestD = Infinity;
+    for(const b of blobs){
+      const d = (b.cx-qx)*(b.cx-qx) + (b.cy-qy)*(b.cy-qy);
+      if(d < bestD){ bestD = d; best = b; }
+    }
+    // tiene que estar razonablemente cerca de su esquina
+    if(!best || Math.sqrt(bestD) > Math.max(sw,sh)*0.42) return null;
+    if(picked.includes(best)) return null;   // dos esquinas cayeron en la misma marca
+    picked.push(best);
+  }
+  const k = W/sw;
+  return picked.map(b => ({x: b.cx*k, y: b.cy*k}));
+}
+
+// Lee los 10 parches de la franja inferior de una imagen ya rectificada
+// (960 x 682) y arma la tabla de calibración.
+function sampleCalibStrip(rectCanvas){
+  const ctx = rectCanvas.getContext('2d');
+  const stripTop = 600, stripH = TPL_OUT_H - 600;
+  const n = CALIB_ORDER.length;
+  const refs = {};
+  for(let i=0;i<n;i++){
+    const x0 = Math.round(TPL_OUT_W*i/n), x1 = Math.round(TPL_OUT_W*(i+1)/n);
+    const pad = Math.round((x1-x0)*0.22);
+    const sx = x0+pad, sw = Math.max(2, (x1-x0)-pad*2);
+    const sy = stripTop + Math.round(stripH*0.25), sh = Math.max(2, Math.round(stripH*0.5));
+    const d = ctx.getImageData(sx, sy, sw, sh).data;
+    let r=0,g=0,b=0,cnt=0;
+    for(let q=0;q<d.length;q+=4){ r+=d[q]; g+=d[q+1]; b+=d[q+2]; cnt++; }
+    refs[CALIB_ORDER[i]] = {r:r/cnt, g:g/cnt, b:b/cnt};
+  }
+  const wh = refs.white;
+  // si el parche "blanco" no es claro, la franja no se leyó bien
+  if(!wh || (wh.r+wh.g+wh.b)/3 < 120) return null;
+  // control de coherencia: si la franja quedó corrida, los parches no cumplen
+  // lo esperado y preferimos no calibrar antes que clasificar mal todo el dibujo
+  const lum = o => (o.r+o.g+o.b)/3;
+  if(lum(refs.platform) > 130) return null;             // el negro tiene que ser oscuro
+  if(lum(refs.white) - lum(refs.gray) < 25) return null; // blanco y gris deben distinguirse
+  const keys = ['platform','player','collect','hazard','trap','trampoline','bumper','goal'];
+  for(let i=0;i<keys.length;i++){
+    for(let j=i+1;j<keys.length;j++){
+      const a=refs[keys[i]], b2=refs[keys[j]];
+      const d = Math.sqrt((a.r-b2.r)**2 + (a.g-b2.g)**2 + (a.b-b2.b)**2);
+      if(d < 34) return null;                            // dos parches salieron casi iguales
+    }
+  }
+  const gain = {
+    r: Math.min(1.9, 235/Math.max(60, wh.r)),
+    g: Math.min(1.9, 235/Math.max(60, wh.g)),
+    b: Math.min(1.9, 235/Math.max(60, wh.b))
+  };
+  // los colores de referencia también se corrigen con el mismo balance
+  const norm = {};
+  Object.keys(refs).forEach(k=>{
+    norm[k] = {
+      r: Math.min(255, refs[k].r*gain.r),
+      g: Math.min(255, refs[k].g*gain.g),
+      b: Math.min(255, refs[k].b*gain.b)
+    };
+  });
+  return {refs:norm, gain, raw:refs};
+}
+
+// recorta la zona de dibujo (los 600 px de arriba) de la imagen rectificada
+function cropPlayArea(rectCanvas){
+  const out = document.createElement('canvas');
+  out.width = TPL_OUT_W; out.height = 600;
+  out.getContext('2d').drawImage(rectCanvas, 0, 0, TPL_OUT_W, 600, 0, 0, TPL_OUT_W, 600);
+  return out;
+}
+
+/* ---------- plantilla para imprimir ---------- */
+// El orden tiene que coincidir con CALIB_ORDER. Los extremos van claros a
+// propósito, para que ningún parche oscuro se confunda con una marca de esquina.
+const TPL_SWATCHES = [
+  {key:'white',     color:'#ffffff', label:'Blanco · referencia'},
+  {key:'player',    color:'#17a34a', label:'Verde · tu personaje'},
+  {key:'collect',   color:'#1f5fd0', label:'Azul · objetos a juntar'},
+  {key:'hazard',    color:'#d8232f', label:'Rojo · peligros'},
+  {key:'platform',  color:'#1b1b1b', label:'Negro · plataformas y paredes'},
+  {key:'trap',      color:'#ef7d1a', label:'Naranja · trampas'},
+  {key:'trampoline',color:'#f2c821', label:'Amarillo · trampolín'},
+  {key:'bumper',    color:'#14aec0', label:'Celeste · rebote'},
+  {key:'goal',      color:'#7b35c9', label:'Violeta · la meta'},
+  {key:'gray',      color:'#9a9a9a', label:'Gris · referencia'}
+];
+
+function buildTemplateHTML(){
+  const swatchCells = TPL_SWATCHES.map(sw =>
+    `<div class="sw" style="background:${sw.color};${sw.key==='white'?'border:1px solid #bbb;':''}"></div>`
+  ).join('');
+  const legend = TPL_SWATCHES.filter(sw=>sw.key!=='white' && sw.key!=='gray').map(sw =>
+    `<li><span class="dot" style="background:${sw.color}"></span>${sw.label.split('·')[1].trim()}</li>`
+  ).join('');
+
+  return `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Plantilla para imprimir — Ñandutí Play</title>
+<style>
+  @page { size: A4 landscape; margin: 8mm; }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:sans-serif;color:#111;}
+  .sheet{width:268mm;height:194mm;position:relative;}
+  .frame{position:absolute;left:0;top:0;right:0;bottom:0;}
+  /* las 4 marcas: el centro de cada una define la esquina del área útil */
+  .mark{position:absolute;width:12mm;height:12mm;background:#000;}
+  .mark i{display:block;position:absolute;left:4mm;top:4mm;width:4mm;height:4mm;background:#fff;}
+  .m-tl{left:0;top:0;} .m-tr{right:0;top:0;} .m-br{right:0;bottom:0;} .m-bl{left:0;bottom:0;}
+  /* área útil = del centro de una marca al centro de la otra (6mm de offset) */
+  .useful{position:absolute;left:6mm;top:6mm;right:6mm;bottom:6mm;}
+  .draw{position:absolute;left:0;top:0;right:0;height:88%;padding:14mm 6mm 4mm;}
+  .strip{position:absolute;left:0;right:0;bottom:0;height:12%;display:flex;border:0.4mm solid #000;}
+  .sw{flex:1;}
+  h1{font-size:5mm;margin:0 0 2mm;letter-spacing:.3mm;}
+  .hint{font-size:3.2mm;color:#444;margin:0;}
+  ul{list-style:none;padding:0;margin:3mm 0 0;display:flex;flex-wrap:wrap;gap:2mm 6mm;font-size:3mm;color:#333;}
+  li{display:flex;align-items:center;gap:1.5mm;}
+  .dot{width:3mm;height:3mm;border-radius:50%;display:inline-block;}
+  .foot{position:absolute;left:6mm;right:6mm;bottom:1mm;font-size:2.6mm;color:#777;text-align:center;}
+  @media screen {
+    body{background:#eee;padding:10mm;}
+    .sheet{background:#fff;box-shadow:0 2mm 8mm rgba(0,0,0,.2);}
+    .noprint{margin:0 0 6mm;font-family:sans-serif;}
+    button{font:inherit;font-weight:700;background:#E4572E;color:#fff;border:none;padding:3mm 6mm;border-radius:2mm;cursor:pointer;}
+  }
+  @media print { .noprint{display:none;} }
+</style></head>
+<body>
+  <div class="noprint">
+    <p>Imprimí esta hoja en A4 horizontal, al 100% (sin "ajustar a la página"), y dibujá dentro del marco.</p>
+    <button onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+  <div class="sheet">
+    <div class="frame">
+      <div class="mark m-tl"><i></i></div>
+      <div class="mark m-tr"><i></i></div>
+      <div class="mark m-br"><i></i></div>
+      <div class="mark m-bl"><i></i></div>
+    </div>
+    <div class="useful">
+      <div class="draw">
+        <h1>ÑANDUTÍ PLAY — dibujá tu nivel acá</h1>
+        <p class="hint">Sacá la foto de frente, con las 4 marcas negras visibles y la franja de colores sin tapar.</p>
+        <ul>${legend}</ul>
+      </div>
+      <div class="strip">${swatchCells}</div>
+    </div>
+    <div class="foot">Code Club Ñandutí · Didáctica Aumentada — no recortes las marcas de las esquinas ni la franja de colores.</div>
+  </div>
+</body></html>`;
+}
+
+/* ---------- carga de sprites del nivel (imágenes recortadas del dibujo real) ---------- */
+function loadLevelAssets(level){
+  return new Promise(resolve=>{
+    const assets = { bg:null, player:null, goal:null, collectibles:[], hazards:[], traps:[], bumpers:[] };
+    const jobs = [];
+    function load(src, setter){
+      if(!src) return;
+      jobs.push(new Promise(res=>{
+        const img = new Image();
+        img.onload = ()=>{ setter(img); res(); };
+        img.onerror = ()=>res();
+        img.src = src;
+      }));
+    }
+    load(level.bgImage, img=>assets.bg=img);
+    load(level.playerSprite, img=>assets.player=img);
+    load(level.goal && level.goal.sprite, img=>assets.goal=img);
+    (level.collectibles||[]).forEach((c,i)=>load(c.sprite, img=>assets.collectibles[i]=img));
+    (level.hazards||[]).forEach((h,i)=>load(h.sprite, img=>assets.hazards[i]=img));
+    (level.traps||[]).forEach((t,i)=>load(t.sprite, img=>assets.traps[i]=img));
+    (level.bumpers||[]).forEach((b,i)=>load(b.sprite, img=>assets.bumpers[i]=img));
+    if(!jobs.length){ resolve(assets); return; }
+    Promise.all(jobs).then(()=>resolve(assets));
+  });
+}
+
+/* ======================================================================
+   SONIDO (sintetizado con Web Audio, sin archivos externos, para que
+   funcione igual en la app y en el juego exportado)
+   ====================================================================== */
+let audioCtx = null;
+let soundMuted = false;
+
+function ensureAudio(){
+  if(!audioCtx){
+    try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
+  }
+  if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function toggleMute(){ soundMuted = !soundMuted; return soundMuted; }
+function beep(freq, duration, type, startDelay, gainPeak){
+  if(soundMuted || !audioCtx) return;
+  const t0 = audioCtx.currentTime + (startDelay||0);
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.setValueAtTime(freq, t0);
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(gainPeak||0.2, t0+0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0+duration);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(t0); osc.stop(t0+duration+0.03);
+}
+function sfxClick(){ ensureAudio(); beep(660,0.05,'square',0,0.08); }
+function sfxJump(){ ensureAudio(); beep(520,0.12,'square',0,0.16); beep(780,0.09,'square',0.05,0.1); }
+function sfxCollect(){ ensureAudio(); beep(880,0.09,'sine',0,0.18); beep(1180,0.09,'sine',0.06,0.15); }
+function sfxHurt(){ ensureAudio(); beep(180,0.22,'sawtooth',0,0.2); beep(110,0.22,'sawtooth',0.07,0.16); }
+function sfxTrap(){ ensureAudio(); beep(260,0.1,'square',0,0.15); beep(160,0.16,'square',0.08,0.14); }
+function sfxBounce(){ ensureAudio(); beep(300,0.06,'sine',0,0.15); beep(700,0.12,'sine',0.05,0.18); }
+function sfxBumper(){ ensureAudio(); beep(1000,0.07,'square',0,0.16); beep(1400,0.07,'square',0.05,0.14); }
+function sfxWin(){ ensureAudio(); beep(523,0.15,'triangle',0,0.2); beep(659,0.15,'triangle',0.14,0.2); beep(784,0.28,'triangle',0.28,0.22); }
+function sfxLose(){ ensureAudio(); beep(300,0.28,'sawtooth',0,0.2); beep(190,0.35,'sawtooth',0.14,0.18); }
+
+/* ======================================================================
+   MOTOR DEL JUEGO (estas funciones se reutilizan tal cual en el
+   archivo HTML exportado, por eso no dependen de nada externo)
+   ====================================================================== */
+
+function createGameState(level){
+  const pw = (level.playerSize && level.playerSize.w) || 26;
+  const ph = (level.playerSize && level.playerSize.h) || 36;
+  return {
+    x: level.player.x - pw/2, y: level.player.y - ph/2,
+    w: pw, h: ph, vx: 0, vy: 0, onGround: false,
+    facing: 1,
+    score: 0,
+    collected: level.collectibles.map(()=>false),
+    status: 'playing', // playing | won | lost
+    lives: 3,
+    startX: level.player.x - pw/2, startY: level.player.y - ph/2,
+    bumperCooldown: 0,
+    particles: [],
+    time: 0
+  };
+}
+
+function spawnSparks(state, x, y, color, count){
+  for(let i=0;i<(count||14);i++){
+    const ang = Math.random()*Math.PI*2;
+    const sp = 60 + Math.random()*200;
+    state.particles.push({
+      x, y,
+      vx: Math.cos(ang)*sp,
+      vy: Math.sin(ang)*sp - 60,
+      life: 0.45 + Math.random()*0.4,
+      max: 0.85,
+      r: 2 + Math.random()*3,
+      color: color || '#EFA23B'
+    });
+  }
+}
+
+function stepParticles(state, dt){
+  for(let i=state.particles.length-1;i>=0;i--){
+    const pa = state.particles[i];
+    pa.x += pa.vx*dt; pa.y += pa.vy*dt;
+    pa.vy += 900*dt;
+    pa.life -= dt;
+    if(pa.life <= 0) state.particles.splice(i,1);
+  }
+}
+
+function stepPhysics(state, level, input, dt){
+  state.time += dt;
+  stepParticles(state, dt);
+  if(state.status !== 'playing') return;
+  const GRAVITY = 1400, MOVE = 260, JUMP_V = 640, FRICTION = 1800;
+
+  if(input.left){ state.vx = -MOVE; state.facing = -1; }
+  else if(input.right){ state.vx = MOVE; state.facing = 1; }
+  else{
+    if(state.vx > 0) state.vx = Math.max(0, state.vx - FRICTION*dt);
+    else if(state.vx < 0) state.vx = Math.min(0, state.vx + FRICTION*dt);
+  }
+
+  if(input.jump && state.onGround){
+    state.vy = -JUMP_V;
+    state.onGround = false;
+    sfxJump();
+  }
+
+  state.vy += GRAVITY*dt;
+  if(state.vy > 1200) state.vy = 1200;
+
+  // horizontal move + collision
+  state.x += state.vx*dt;
+  for(const p of level.platforms){
+    if(rectsOverlap(state.x,state.y,state.w,state.h,p.x,p.y,p.w,p.h)){
+      if(state.vx > 0) state.x = p.x - state.w;
+      else if(state.vx < 0) state.x = p.x + p.w;
+      state.vx = 0;
+    }
+  }
+  state.x = Math.max(0, Math.min(level.w - state.w, state.x));
+
+  // vertical move + collision
+  state.y += state.vy*dt;
+  state.onGround = false;
+  for(const p of level.platforms){
+    if(rectsOverlap(state.x,state.y,state.w,state.h,p.x,p.y,p.w,p.h)){
+      if(state.vy > 0){
+        state.y = p.y - state.h;
+        if(p.bounce){
+          state.vy = -1000;
+          sfxBounce();
+        } else {
+          state.onGround = true;
+          state.vy = 0;
+        }
+      }
+      else if(state.vy < 0){ state.y = p.y + p.h; state.vy = 0; }
+    }
+  }
+
+  if(state.bumperCooldown > 0) state.bumperCooldown -= dt;
+
+  // fell off the world
+  if(state.y > level.h + 100){
+    respawn(state);
+  }
+
+  // collectibles
+  level.collectibles.forEach((c,i)=>{
+    if(state.collected[i]) return;
+    if(circleRectOverlap(c.x,c.y,c.r,state.x,state.y,state.w,state.h)){
+      state.collected[i] = true;
+      state.score++;
+      spawnSparks(state, c.x, c.y, '#2f6fe4', 16);
+      sfxCollect();
+    }
+  });
+
+  // hazards
+  for(const h of level.hazards){
+    if(circleRectOverlap(h.x,h.y,h.r,state.x,state.y,state.w,state.h)){
+      spawnSparks(state, state.x+state.w/2, state.y+state.h/2, '#e0333f', 18);
+      sfxHurt();
+      state.lives--;
+      if(state.lives <= 0){ state.status = 'lost'; sfxLose(); }
+      else { respawn(state); }
+      break;
+    }
+  }
+
+  // traps: send you back to the start but don't cost a life
+  for(const t of (level.traps||[])){
+    if(circleRectOverlap(t.x,t.y,t.r,state.x,state.y,state.w,state.h)){
+      sfxTrap();
+      if(state.score > 0) state.score--;
+      respawn(state);
+      break;
+    }
+  }
+
+  // pinball bumpers: bounce the player away and add bonus points
+  if(state.bumperCooldown <= 0){
+    for(const bmp of (level.bumpers||[])){
+      if(circleRectOverlap(bmp.x,bmp.y,bmp.r,state.x,state.y,state.w,state.h)){
+        const px = state.x + state.w/2, py = state.y + state.h/2;
+        let dx = px - bmp.x, dy = py - bmp.y;
+        const dist = Math.hypot(dx,dy) || 1;
+        dx/=dist; dy/=dist;
+        const force = 720;
+        state.vx = dx*force;
+        state.vy = dy*force - 200;
+        state.x += dx*10; state.y += dy*10;
+        state.score += 2;
+        state.bumperCooldown = 0.25;
+        spawnSparks(state, bmp.x, bmp.y, '#17b6c4', 12);
+        sfxBumper();
+        break;
+      }
+    }
+  }
+
+  // goal
+  if(circleRectOverlap(level.goal.x, level.goal.y, level.goal.r, state.x, state.y, state.w, state.h)){
+    state.status = 'won';
+    spawnSparks(state, level.goal.x, level.goal.y, '#EFA23B', 46);
+    sfxWin();
+  }
+}
+
+function respawn(state){
+  state.x = state.startX; state.y = state.startY;
+  state.vx = 0; state.vy = 0;
+}
+
+function rectsOverlap(x1,y1,w1,h1,x2,y2,w2,h2){
+  return x1 < x2+w2 && x1+w1 > x2 && y1 < y2+h2 && y1+h1 > y2;
+}
+function circleRectOverlap(cx,cy,r,rx,ry,rw,rh){
+  const nx = Math.max(rx, Math.min(cx, rx+rw));
+  const ny = Math.max(ry, Math.min(cy, ry+rh));
+  const dx = cx-nx, dy = cy-ny;
+  return (dx*dx+dy*dy) < r*r;
+}
+
+function drawSprite(ctx, img, cx, cy, w, h, flip, rot){
+  ctx.save();
+  ctx.translate(cx, cy);
+  if(rot) ctx.rotate(rot);
+  if(flip) ctx.scale(-1,1);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, -w/2, -h/2, w, h);
+  ctx.restore();
+}
+
+function renderGame(ctx, level, state, canvasW, canvasH, assets){
+  assets = assets || {};
+  const sx = canvasW/level.w, sy = canvasH/level.h;
+  const t = state.time || 0;
+  ctx.save();
+  ctx.scale(sx,sy);
+
+  // ---- fondo: el dibujo real (sin los elementos que se mueven) ----
+  if(assets.bg){
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,level.w,level.h);
+    ctx.drawImage(assets.bg, 0, 0, level.w, level.h);
+  } else {
+    ctx.fillStyle = '#eef3f0';
+    ctx.fillRect(0,0,level.w,level.h);
+  }
+  const hasArt = !!assets.bg;
+
+  // ---- plataformas ----
+  level.platforms.forEach(p=>{
+    if(hasArt && !p.floor && !p.bounce) return; // ya están dibujadas en el papel
+    if(p.floor){
+      ctx.fillStyle = hasArt ? 'rgba(37,34,30,.18)' : '#c9c2b3';
+    } else if(p.bounce){
+      ctx.fillStyle = hasArt ? 'rgba(244,209,61,.55)' : '#f4d13d';
+    } else {
+      ctx.fillStyle = '#25221E';
+    }
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(p.x,p.y,p.w,p.h,6); else ctx.rect(p.x,p.y,p.w,p.h);
+    ctx.fill();
+    if(p.bounce){
+      ctx.strokeStyle = '#a9790a'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      for(let i=0;i<3;i++){
+        const zx = p.x + p.w*(i+0.5)/3;
+        ctx.moveTo(zx-8, p.y+p.h*0.7); ctx.lineTo(zx, p.y+p.h*0.2); ctx.lineTo(zx+8, p.y+p.h*0.7);
+      }
+      ctx.stroke();
+    }
+  });
+
+  // ---- trampas ----
+  (level.traps||[]).forEach((tr,i)=>{
+    const img = assets.traps && assets.traps[i];
+    if(img){
+      drawSprite(ctx, img, tr.x, tr.y, tr.spriteW||tr.r*2, tr.spriteH||tr.r*2, false, Math.sin(t*2+i)*0.12);
+      return;
+    }
+    ctx.beginPath();
+    ctx.fillStyle = '#f07d1c';
+    ctx.arc(tr.x,tr.y,tr.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#7a3d05';
+    ctx.beginPath();
+    ctx.arc(tr.x,tr.y,tr.r*0.45,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // ---- bumpers de pinball ----
+  (level.bumpers||[]).forEach((bmp,i)=>{
+    const img = assets.bumpers && assets.bumpers[i];
+    const pulse = 1 + Math.sin(t*6+i)*0.06;
+    if(img){
+      drawSprite(ctx, img, bmp.x, bmp.y, (bmp.spriteW||bmp.r*2)*pulse, (bmp.spriteH||bmp.r*2)*pulse);
+      return;
+    }
+    ctx.beginPath();
+    ctx.fillStyle = '#17b6c4';
+    ctx.arc(bmp.x,bmp.y,bmp.r*pulse,0,Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
+    ctx.arc(bmp.x,bmp.y,bmp.r*0.55,0,Math.PI*2);
+    ctx.stroke();
+  });
+
+  // ---- coleccionables (flotan un poquito) ----
+  level.collectibles.forEach((c,i)=>{
+    if(state.collected[i]) return;
+    const bob = Math.sin(t*3 + i*0.9)*3;
+    const img = assets.collectibles && assets.collectibles[i];
+    if(img){
+      drawSprite(ctx, img, c.x, c.y+bob, c.spriteW||c.r*2, c.spriteH||c.r*2);
+      return;
+    }
+    ctx.beginPath();
+    ctx.fillStyle = '#2f6fe4';
+    ctx.arc(c.x,c.y+bob,c.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.fillStyle = '#fff';
+    ctx.arc(c.x-c.r*0.3,c.y+bob-c.r*0.3,c.r*0.25,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // ---- peligros ----
+  level.hazards.forEach((h,i)=>{
+    const img = assets.hazards && assets.hazards[i];
+    if(img){
+      const wob = Math.sin(t*5+i)*0.1;
+      drawSprite(ctx, img, h.x, h.y, h.spriteW||h.r*2, h.spriteH||h.r*2, false, wob);
+      return;
+    }
+    ctx.beginPath();
+    ctx.fillStyle = '#e0333f';
+    const spikes=8;
+    for(let k=0;k<spikes*2;k++){
+      const ang = (Math.PI*2*k)/(spikes*2);
+      const rad = k%2===0 ? h.r : h.r*0.55;
+      const px = h.x + Math.cos(ang)*rad, py = h.y + Math.sin(ang)*rad;
+      k===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  // ---- meta ----
+  const goalBob = Math.sin(t*2.2)*2.5;
+  if(assets.goal){
+    drawSprite(ctx, assets.goal, level.goal.x, level.goal.y+goalBob,
+               level.goal.spriteW||level.goal.r*2, level.goal.spriteH||level.goal.r*2);
+    ctx.save();
+    ctx.globalAlpha = 0.35 + Math.abs(Math.sin(t*2))*0.35;
+    ctx.strokeStyle = '#EFA23B';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8,7]);
+    ctx.lineDashOffset = -t*22;
+    ctx.beginPath();
+    ctx.arc(level.goal.x, level.goal.y+goalBob, level.goal.r*1.25, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+  } else {
+    ctx.beginPath();
+    ctx.fillStyle = '#8b3fd4';
+    ctx.arc(level.goal.x, level.goal.y+goalBob, level.goal.r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.font = (level.goal.r*1.1)+'px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🏁', level.goal.x, level.goal.y+goalBob+1);
+  }
+
+  // ---- jugador ----
+  if(assets.player){
+    const pw = level.playerSpriteDims ? level.playerSpriteDims.w : state.w;
+    const ph = level.playerSpriteDims ? level.playerSpriteDims.h : state.h;
+    // sombrita para que se despegue del papel
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(state.x+state.w/2, state.y+state.h, state.w*0.45, 4, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+    drawSprite(ctx, assets.player, state.x+state.w/2, state.y+state.h/2, pw, ph, state.facing<0);
+  } else {
+    ctx.fillStyle = '#2fae4e';
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(state.x,state.y,state.w,state.h,8); else ctx.rect(state.x,state.y,state.w,state.h);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    const eyeX = state.facing>0 ? state.x+state.w-9 : state.x+5;
+    ctx.beginPath(); ctx.arc(eyeX, state.y+11, 3.5,0,Math.PI*2); ctx.fill();
+  }
+
+  // ---- chispas ----
+  (state.particles||[]).forEach(pa=>{
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, pa.life/pa.max);
+    ctx.fillStyle = pa.color;
+    ctx.beginPath();
+    ctx.arc(pa.x, pa.y, pa.r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  ctx.restore();
+}
+
+
+/* ======================================================================
+   MODO LABERINTO (tipo comecocos): se mueve en 4 direcciones, junta todas
+   las pastillas y esquiva a los fantasmas.
+   ====================================================================== */
+
+function mazeCellSize(level){
+  const m = level.maze;
+  return { w: level.w/m.cols, h: level.h/m.rows };
+}
+
+function mazeIsWall(level, gx, gy){
+  const m = level.maze;
+  if(gx < 0 || gy < 0 || gx >= m.cols || gy >= m.rows) return true;
+  return m.walls[gy][gx] === 1;
+}
+
+// true si un rectángulo pisa alguna celda-pared
+function mazeBlocked(level, x, y, w, h){
+  const c = mazeCellSize(level);
+  const gx0 = Math.floor(x/c.w), gx1 = Math.floor((x+w-0.01)/c.w);
+  const gy0 = Math.floor(y/c.h), gy1 = Math.floor((y+h-0.01)/c.h);
+  for(let gy=gy0; gy<=gy1; gy++){
+    for(let gx=gx0; gx<=gx1; gx++){
+      if(mazeIsWall(level, gx, gy)) return true;
+    }
+  }
+  return false;
+}
+
+// busca la celda libre más cercana a un punto (para no nacer dentro de una pared)
+function mazeNearestFree(level, px, py, w, h){
+  const c = mazeCellSize(level);
+  let best = null, bestD = Infinity;
+  for(let gy=0; gy<level.maze.rows; gy++){
+    for(let gx=0; gx<level.maze.cols; gx++){
+      if(mazeIsWall(level, gx, gy)) continue;
+      const cx = (gx+0.5)*c.w, cy = (gy+0.5)*c.h;
+      if(mazeBlocked(level, cx-w/2, cy-h/2, w, h)) continue;
+      const d = (cx-px)*(cx-px) + (cy-py)*(cy-py);
+      if(d < bestD){ bestD = d; best = {x:cx, y:cy}; }
+    }
+  }
+  return best || {x:level.w/2, y:level.h/2};
+}
+
+// celdas libres a las que el jugador realmente puede llegar desde su inicio
+function mazeReachable(level, startX, startY, boxW, boxH){
+  const m = level.maze, c = mazeCellSize(level);
+  const gx0 = Math.floor(startX/c.w), gy0 = Math.floor(startY/c.h);
+  const ok = (gx,gy)=>{
+    if(mazeIsWall(level,gx,gy)) return false;
+    const cx=(gx+0.5)*c.w, cy=(gy+0.5)*c.h;
+    return !mazeBlocked(level, cx-boxW/2, cy-boxH/2, boxW, boxH);
+  };
+  const seen = new Set();
+  if(!ok(gx0,gy0)) return seen;
+  const stack=[[gx0,gy0]];
+  seen.add(gy0*m.cols+gx0);
+  while(stack.length){
+    const [gx,gy] = stack.pop();
+    for(const [nx,ny] of [[gx+1,gy],[gx-1,gy],[gx,gy+1],[gx,gy-1]]){
+      const key = ny*m.cols+nx;
+      if(seen.has(key) || !ok(nx,ny)) continue;
+      seen.add(key); stack.push([nx,ny]);
+    }
+  }
+  return seen;
+}
+
+// celda alcanzable más cercana a un punto (para no dejar pastillas encerradas)
+function mazeNearestReachable(level, reachable, px, py){
+  const m = level.maze, c = mazeCellSize(level);
+  let best=null, bestD=Infinity;
+  reachable.forEach(key=>{
+    const gy = Math.floor(key/m.cols), gx = key % m.cols;
+    const cx=(gx+0.5)*c.w, cy=(gy+0.5)*c.h;
+    const d=(cx-px)*(cx-px)+(cy-py)*(cy-py);
+    if(d<bestD){ bestD=d; best={x:cx,y:cy}; }
+  });
+  return best;
+}
+
+function createMazeState(level){
+  const c = mazeCellSize(level);
+  const size = Math.min(c.w, c.h)*0.72;
+  const start = mazeNearestFree(level, level.player.x, level.player.y, size, size);
+  const reach0 = mazeReachable(level, start.x, start.y, size, size);
+  const ghosts = (level.hazards||[]).slice(0,4).map((h,i)=>{
+    const pos = mazeNearestReachable(level, reach0, h.x, h.y) || mazeNearestFree(level, h.x, h.y, size, size);
+    return {
+      x: pos.x, y: pos.y, spriteIndex: i,
+      dirX: i%2 ? 1 : -1, dirY: 0,
+      speed: 66 + i*8, think: 0
+    };
+  });
+  // toda pastilla tiene que quedar en una celda a la que el jugador pueda llegar,
+  // si no el nivel sería imposible de terminar
+  const reachable = mazeReachable(level, start.x, start.y, size, size);
+  const cellKey = (x,y)=> Math.floor(y/c.h)*level.maze.cols + Math.floor(x/c.w);
+  const pellets = (level.collectibles||[]).map((col,i)=>{
+    let x = col.x, y = col.y;
+    if(!reachable.has(cellKey(x,y))){
+      const pos = mazeNearestReachable(level, reachable, x, y);
+      if(pos){ x = pos.x; y = pos.y; }
+    }
+    return {x, y, r: Math.min(col.r, Math.min(c.w,c.h)*0.45), spriteIndex:i, taken:false};
+  });
+  return {
+    mode:'maze',
+    x: start.x - size/2, y: start.y - size/2, w: size, h: size,
+    startX: start.x - size/2, startY: start.y - size/2,
+    facing: 1, dirX: 0, dirY: 0,
+    speed: 168,
+    score: 0, lives: 3, status:'playing',
+    pellets, ghosts,
+    remaining: pellets.length,
+    invuln: 0, particles: [], time: 0,
+    collected: pellets.map(()=>false)
+  };
+}
+
+function stepMaze(state, level, input, dt){
+  state.time += dt;
+  stepParticles(state, dt);
+  if(state.status !== 'playing') return;
+  if(state.invuln > 0) state.invuln -= dt;
+
+  // dirección pedida (last input wins, como en los comecocos)
+  let wantX = 0, wantY = 0;
+  if(input.left) wantX = -1;
+  else if(input.right) wantX = 1;
+  if(input.up) wantY = -1;
+  else if(input.down) wantY = 1;
+  if(wantX && wantY) wantY = 0;
+  if(wantX || wantY){ state.dirX = wantX; state.dirY = wantY; }
+  if(state.dirX) state.facing = state.dirX;
+
+  // mover con deslizamiento: si no puede en X prueba en Y y viceversa
+  const step = state.speed*dt;
+  const nx = state.x + state.dirX*step;
+  if(state.dirX && !mazeBlocked(level, nx, state.y, state.w, state.h)) state.x = nx;
+  const ny = state.y + state.dirY*step;
+  if(state.dirY && !mazeBlocked(level, state.x, ny, state.w, state.h)) state.y = ny;
+  state.x = Math.max(0, Math.min(level.w - state.w, state.x));
+  state.y = Math.max(0, Math.min(level.h - state.h, state.y));
+
+  const pcx = state.x + state.w/2, pcy = state.y + state.h/2;
+
+  // pastillas
+  state.pellets.forEach((pe,i)=>{
+    if(pe.taken) return;
+    if(Math.hypot(pe.x-pcx, pe.y-pcy) < pe.r + state.w*0.7){
+      pe.taken = true;
+      state.collected[i] = true;
+      state.score++;
+      state.remaining--;
+      spawnSparks(state, pe.x, pe.y, '#2f6fe4', 12);
+      sfxCollect();
+    }
+  });
+
+  // fantasmas: persiguen con algo de azar y rebotan en las paredes
+  state.ghosts.forEach(g=>{
+    g.think -= dt;
+    const gs = g.speed*dt;
+    const tryMove = (dx,dy)=>{
+      const half = state.w/2;
+      return !mazeBlocked(level, g.x - half + dx*gs, g.y - half + dy*gs, state.w, state.h);
+    };
+    if(g.think <= 0 || !tryMove(g.dirX, g.dirY)){
+      g.think = 0.35 + Math.random()*0.5;
+      const opts = [[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dy])=>tryMove(dx,dy));
+      if(opts.length){
+        // 70% persigue al jugador, 30% elige al azar
+        if(Math.random() < 0.55){
+          opts.sort((a,b)=>{
+            const da = Math.hypot(g.x + a[0]*20 - pcx, g.y + a[1]*20 - pcy);
+            const db = Math.hypot(g.x + b[0]*20 - pcx, g.y + b[1]*20 - pcy);
+            return da - db;
+          });
+          g.dirX = opts[0][0]; g.dirY = opts[0][1];
+        } else {
+          const pick = opts[Math.floor(Math.random()*opts.length)];
+          g.dirX = pick[0]; g.dirY = pick[1];
+        }
+      }
+    }
+    if(tryMove(g.dirX, g.dirY)){
+      g.x += g.dirX*gs;
+      g.y += g.dirY*gs;
+    }
+    // choque con el jugador
+    if(state.invuln <= 0 && Math.hypot(g.x-pcx, g.y-pcy) < state.w*0.85){
+      spawnSparks(state, pcx, pcy, '#e0333f', 18);
+      state.lives--;
+      state.invuln = 2.2;
+      sfxHurt();
+      if(state.lives <= 0){ state.status = 'lost'; sfxLose(); }
+      else { state.x = state.startX; state.y = state.startY; state.dirX = 0; state.dirY = 0; }
+    }
+  });
+
+  if(state.remaining <= 0){
+    state.status = 'won';
+    spawnSparks(state, pcx, pcy, '#EFA23B', 46);
+    sfxWin();
+  }
+}
+
+function renderMaze(ctx, level, state, canvasW, canvasH, assets){
+  assets = assets || {};
+  const sx = canvasW/level.w, sy = canvasH/level.h;
+  const t = state.time || 0;
+  ctx.save();
+  ctx.scale(sx,sy);
+
+  if(assets.bg){
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0,0,level.w,level.h);
+    ctx.drawImage(assets.bg, 0, 0, level.w, level.h);
+  } else {
+    ctx.fillStyle = '#eef3f0';
+    ctx.fillRect(0,0,level.w,level.h);
+  }
+
+  // paredes: sombreado suave sobre el trazo real (o bloques si no hay dibujo)
+  const c = mazeCellSize(level);
+  for(let gy=0; gy<level.maze.rows; gy++){
+    for(let gx=0; gx<level.maze.cols; gx++){
+      if(!level.maze.walls[gy][gx]) continue;
+      ctx.fillStyle = assets.bg ? 'rgba(37,34,30,.16)' : '#25221E';
+      ctx.fillRect(gx*c.w, gy*c.h, c.w+0.5, c.h+0.5);
+    }
+  }
+
+  // pastillas
+  state.pellets.forEach((pe,i)=>{
+    if(pe.taken) return;
+    const img = assets.collectibles && assets.collectibles[pe.spriteIndex];
+    const bob = Math.sin(t*3 + i)*2;
+    if(img){
+      const col = level.collectibles[pe.spriteIndex];
+      drawSprite(ctx, img, pe.x, pe.y+bob, col.spriteW, col.spriteH);
+    } else {
+      ctx.beginPath();
+      ctx.fillStyle = '#2f6fe4';
+      ctx.arc(pe.x, pe.y+bob, pe.r*0.55, 0, Math.PI*2);
+      ctx.fill();
+    }
+  });
+
+  // fantasmas
+  state.ghosts.forEach((g,i)=>{
+    const img = assets.hazards && assets.hazards[g.spriteIndex];
+    const wob = Math.sin(t*6+i)*0.12;
+    if(img){
+      const hz = level.hazards[g.spriteIndex];
+      // el fantasma se escala al tamaño de la celda para que lo que se ve
+      // coincida con lo que choca
+      const k = (state.w*1.6) / Math.max(hz.spriteW, hz.spriteH);
+      drawSprite(ctx, img, g.x, g.y, hz.spriteW*k, hz.spriteH*k, g.dirX < 0, wob);
+    } else {
+      ctx.save();
+      ctx.translate(g.x, g.y);
+      ctx.fillStyle = '#e0333f';
+      ctx.beginPath();
+      ctx.arc(0, -2, state.w*0.5, Math.PI, 0);
+      ctx.lineTo(state.w*0.5, state.w*0.5);
+      ctx.lineTo(-state.w*0.5, state.w*0.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(-4, -4, 3, 0, Math.PI*2); ctx.arc(5, -4, 3, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  });
+
+  // jugador (parpadea si es invulnerable)
+  const blink = state.invuln > 0 && Math.floor(state.invuln*10) % 2 === 0;
+  if(!blink){
+    const pcx = state.x + state.w/2, pcy = state.y + state.h/2;
+    if(assets.player){
+      const pw = level.playerSpriteDims ? level.playerSpriteDims.w : state.w;
+      const ph = level.playerSpriteDims ? level.playerSpriteDims.h : state.h;
+      const k = Math.min(1, (state.w*1.5)/Math.max(pw,ph));
+      drawSprite(ctx, assets.player, pcx, pcy, pw*k, ph*k, state.facing<0);
+    } else {
+      ctx.beginPath();
+      ctx.fillStyle = '#2fae4e';
+      const mouth = Math.abs(Math.sin(t*9))*0.5 + 0.06;
+      const ang = Math.atan2(state.dirY, state.dirX || (state.facing>0?1:-1));
+      ctx.moveTo(pcx, pcy);
+      ctx.arc(pcx, pcy, state.w*0.55, ang+mouth, ang-mouth+Math.PI*2);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  (state.particles||[]).forEach(pa=>{
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, pa.life/pa.max);
+    ctx.fillStyle = pa.color;
+    ctx.beginPath(); ctx.arc(pa.x, pa.y, pa.r, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+
+  ctx.restore();
+}
+
+
+/* ======================================================================
+   MODO 2 JUGADORES (tipo pong): cada uno maneja una paleta dibujada,
+   primero a 5 puntos. En celular se arrastra el dedo en cada mitad.
+   ====================================================================== */
+
+function createPongState(level){
+  const padH = level.h*0.22, padW = level.w*0.022;
+  return {
+    mode:'pong',
+    time: 0,
+    status:'playing',
+    target: 5,
+    scoreL: 0, scoreR: 0,
+    score: 0,
+    padW, padH,
+    leftY: level.h/2 - padH/2,
+    rightY: level.h/2 - padH/2,
+    ball: {x: level.w/2, y: level.h/2, r: Math.max(9, level.h*0.022), vx: 0, vy: 0},
+    serveDelay: 1.0,
+    lastWinner: null,
+    particles: [],
+    collected: [],
+    lives: 0
+  };
+}
+
+function pongServe(state, level, toRight){
+  state.ball.x = level.w/2;
+  state.ball.y = level.h/2;
+  const speed = level.w*0.42;
+  const ang = (Math.random()*0.7 - 0.35);
+  state.ball.vx = (toRight ? 1 : -1) * speed * Math.cos(ang);
+  state.ball.vy = speed * Math.sin(ang);
+  state.serveDelay = 0.85;
+}
+
+function stepPong(state, level, input, dt){
+  state.time += dt;
+  stepParticles(state, dt);
+  if(state.status !== 'playing') return;
+
+  const padSpeed = level.h*0.85;
+  // jugador 1: W/S o arrastre en la mitad izquierda
+  if(input.p1up) state.leftY -= padSpeed*dt;
+  if(input.p1down) state.leftY += padSpeed*dt;
+  if(input.p1target != null) state.leftY = input.p1target - state.padH/2;
+  // jugador 2: flechas o arrastre en la mitad derecha
+  if(input.p2up) state.rightY -= padSpeed*dt;
+  if(input.p2down) state.rightY += padSpeed*dt;
+  if(input.p2target != null) state.rightY = input.p2target - state.padH/2;
+
+  const clampY = v => Math.max(0, Math.min(level.h - state.padH, v));
+  state.leftY = clampY(state.leftY);
+  state.rightY = clampY(state.rightY);
+
+  if(state.serveDelay > 0){ state.serveDelay -= dt; return; }
+  if(state.ball.vx === 0 && state.ball.vy === 0){ pongServe(state, level, true); return; }
+
+  const b = state.ball;
+  b.x += b.vx*dt;
+  b.y += b.vy*dt;
+
+  // techo y piso
+  if(b.y - b.r < 0){ b.y = b.r; b.vy = Math.abs(b.vy); sfxBounce(); }
+  if(b.y + b.r > level.h){ b.y = level.h - b.r; b.vy = -Math.abs(b.vy); sfxBounce(); }
+
+  const padXL = level.w*0.035, padXR = level.w*0.965 - state.padW;
+
+  // paleta izquierda
+  if(b.vx < 0 && b.x - b.r < padXL + state.padW && b.x > padXL - state.padW &&
+     b.y > state.leftY && b.y < state.leftY + state.padH){
+    b.x = padXL + state.padW + b.r;
+    b.vx = Math.abs(b.vx)*1.05;
+    b.vy += ((b.y - (state.leftY + state.padH/2)) / (state.padH/2)) * level.h*0.28;
+    spawnSparks(state, b.x, b.y, '#2fae4e', 8);
+    sfxBumper();
+  }
+  // paleta derecha
+  if(b.vx > 0 && b.x + b.r > padXR && b.x < padXR + state.padW*2 &&
+     b.y > state.rightY && b.y < state.rightY + state.padH){
+    b.x = padXR - b.r;
+    b.vx = -Math.abs(b.vx)*1.05;
+    b.vy += ((b.y - (state.rightY + state.padH/2)) / (state.padH/2)) * level.h*0.28;
+    spawnSparks(state, b.x, b.y, '#8b3fd4', 8);
+    sfxBumper();
+  }
+
+  // límite de velocidad para que siga siendo jugable
+  const maxV = level.w*0.95;
+  b.vx = Math.max(-maxV, Math.min(maxV, b.vx));
+  b.vy = Math.max(-maxV, Math.min(maxV, b.vy));
+
+  // punto
+  if(b.x + b.r < 0){
+    state.scoreR++;
+    state.lastWinner = 'R';
+    spawnSparks(state, 10, b.y, '#8b3fd4', 20);
+    sfxHurt();
+    if(state.scoreR >= state.target){ state.status='won'; sfxWin(); }
+    else pongServe(state, level, false);
+  } else if(b.x - b.r > level.w){
+    state.scoreL++;
+    state.lastWinner = 'L';
+    spawnSparks(state, level.w-10, b.y, '#2fae4e', 20);
+    sfxHurt();
+    if(state.scoreL >= state.target){ state.status='won'; sfxWin(); }
+    else pongServe(state, level, true);
+  }
+}
+
+function renderPong(ctx, level, state, canvasW, canvasH, assets){
+  assets = assets || {};
+  const sx = canvasW/level.w, sy = canvasH/level.h;
+  ctx.save();
+  ctx.scale(sx,sy);
+
+  if(assets.bg){
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0,0,level.w,level.h);
+    ctx.save();
+    ctx.globalAlpha = 0.45;   // el dibujo queda de fondo, tenue
+    ctx.drawImage(assets.bg, 0, 0, level.w, level.h);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = '#eef3f0';
+    ctx.fillRect(0,0,level.w,level.h);
+  }
+
+  // línea central y marcador grande
+  ctx.save();
+  ctx.strokeStyle = 'rgba(37,34,30,.35)';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([12,12]);
+  ctx.beginPath();
+  ctx.moveTo(level.w/2, 0); ctx.lineTo(level.w/2, level.h);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = '#25221E';
+  ctx.font = 'bold ' + Math.round(level.h*0.3) + 'px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(String(state.scoreL), level.w*0.3, level.h*0.42);
+  ctx.fillText(String(state.scoreR), level.w*0.7, level.h*0.42);
+  ctx.restore();
+
+  const padXL = level.w*0.035, padXR = level.w*0.965 - state.padW;
+
+  function paddle(x, y, img, dims, color){
+    if(img && dims){
+      // la paleta dibujada se encaja en una caja alta y angosta, sin deformarse
+      const boxH = state.padH, boxW = state.padW*4;
+      const k = Math.min(boxH/dims.h, boxW/dims.w);
+      drawSprite(ctx, img, x + state.padW/2, y + state.padH/2, dims.w*k, dims.h*k);
+      // barra de apoyo para que se entienda dónde golpea
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(x, y, state.padW, state.padH, state.padW/2);
+      else ctx.rect(x, y, state.padW, state.padH);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(x, y, state.padW, state.padH, state.padW/2);
+    else ctx.rect(x, y, state.padW, state.padH);
+    ctx.fill();
+  }
+
+  paddle(padXL, state.leftY, assets.player, level.playerSpriteDims, '#2fae4e');
+  paddle(padXR, state.rightY, assets.goal,
+         level.goal && level.goal.spriteW ? {w:level.goal.spriteW, h:level.goal.spriteH} : null,
+         '#8b3fd4');
+
+  // pelota: usa el primer objeto dibujado si existe
+  const ballImg = assets.collectibles && assets.collectibles[0];
+  if(ballImg){
+    const d = level.collectibles[0];
+    const k = (state.ball.r*2.4) / Math.max(d.spriteW, d.spriteH);
+    drawSprite(ctx, ballImg, state.ball.x, state.ball.y, d.spriteW*k, d.spriteH*k, false, state.time*2);
+  } else {
+    ctx.beginPath();
+    ctx.fillStyle = '#E4572E';
+    ctx.arc(state.ball.x, state.ball.y, state.ball.r, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  (state.particles||[]).forEach(pa=>{
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, pa.life/pa.max);
+    ctx.fillStyle = pa.color;
+    ctx.beginPath(); ctx.arc(pa.x, pa.y, pa.r, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+
+  ctx.restore();
+}
+
+// arrastre por mitades del canvas para los dos jugadores en la misma pantalla
+function attachPongTouch(canvas, input, level){
+  const pointers = {};
+  function handle(e){
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const list = e.touches ? Array.from(e.touches) : [e];
+    input.p1target = null; input.p2target = null;
+    list.forEach(t=>{
+      const px = (t.clientX - rect.left)/rect.width;
+      const py = (t.clientY - rect.top)/rect.height * level.h;
+      if(px < 0.5) input.p1target = py; else input.p2target = py;
+    });
+  }
+  function clear(e){
+    if(!e.touches || e.touches.length === 0){ input.p1target = null; input.p2target = null; }
+    else handle(e);
+  }
+  canvas.addEventListener('touchstart', handle, {passive:false});
+  canvas.addEventListener('touchmove', handle, {passive:false});
+  canvas.addEventListener('touchend', clear);
+  canvas.addEventListener('touchcancel', clear);
+  let mouseDown = false;
+  canvas.addEventListener('mousedown', e=>{ mouseDown = true; handle(e); });
+  canvas.addEventListener('mousemove', e=>{ if(mouseDown) handle(e); });
+  window.addEventListener('mouseup', ()=>{ mouseDown = false; input.p1target = null; input.p2target = null; });
+  return input;
+}
+
+function attachControls(canvas, btnLeft, btnRight, btnJump, btnUp, btnDown){
+  const input = {left:false,right:false,jump:false,up:false,down:false,
+                 p1up:false,p1down:false,p2up:false,p2down:false,p1target:null,p2target:null};
+  function key(e,val){
+    if(['ArrowLeft','a','A'].includes(e.key)) input.left = val;
+    if(['ArrowRight','d','D'].includes(e.key)) input.right = val;
+    if(['ArrowUp','w','W'].includes(e.key)){ input.up = val; input.jump = val; if(val) e.preventDefault(); }
+    if(['ArrowDown','s','S'].includes(e.key)){ input.down = val; if(val) e.preventDefault(); }
+    if(e.key === ' '){ input.jump = val; if(val) e.preventDefault(); }
+    // pong: jugador 1 con W/S, jugador 2 con las flechas
+    if(['w','W'].includes(e.key)) input.p1up = val;
+    if(['s','S'].includes(e.key)) input.p1down = val;
+    if(e.key === 'ArrowUp') input.p2up = val;
+    if(e.key === 'ArrowDown') input.p2down = val;
+    if(val) ensureAudio();
+  }
+  window.addEventListener('keydown', e=>key(e,true));
+  window.addEventListener('keyup', e=>key(e,false));
+
+  function bindHold(el, prop){
+    if(!el) return;
+    const on = e => { e.preventDefault(); ensureAudio(); input[prop]=true; };
+    const off = e => { input[prop]=false; };
+    el.addEventListener('mousedown', on);
+    el.addEventListener('touchstart', on, {passive:false});
+    ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev=>el.addEventListener(ev, off));
+  }
+  bindHold(btnLeft,'left'); bindHold(btnRight,'right'); bindHold(btnJump,'jump');
+  bindHold(btnUp,'up'); bindHold(btnDown,'down');
+  return input;
+}
+
+function runGameLoop(canvas, level, input, callbacks, assets){
+  const ctx = canvas.getContext('2d');
+  const mode = level.mode || 'platform';
+  const state = mode === 'maze' ? createMazeState(level)
+              : mode === 'pong' ? createPongState(level)
+              : createGameState(level);
+  const step = mode === 'maze' ? stepMaze : mode === 'pong' ? stepPong : stepPhysics;
+  const draw = mode === 'maze' ? renderMaze : mode === 'pong' ? renderPong : renderGame;
+  let last = performance.now();
+  let raf;
+  function frame(now){
+    const dt = Math.min(0.033, (now-last)/1000);
+    last = now;
+    step(state, level, input, dt);
+    draw(ctx, level, state, canvas.width, canvas.height, assets);
+    if(callbacks && callbacks.onFrame) callbacks.onFrame(state);
+    if(state.status === 'playing') raf = requestAnimationFrame(frame);
+    else {
+      if(callbacks && callbacks.onEnd && !state._ended){ state._ended = true; callbacks.onEnd(state); }
+      // seguimos animando las chispas del final un ratito
+      if(state.particles && state.particles.length) raf = requestAnimationFrame(frame);
+    }
+  }
+  raf = requestAnimationFrame(frame);
+  return { stop: ()=>cancelAnimationFrame(raf), state };
+}
+
+/* ======================================================================
+   INTERFAZ DE LA APP
+   ====================================================================== */
+
+// --- fondo decorativo tipo ñandutí ---
+(function drawBg(){
+  const el = document.getElementById('nanduBg');
+  const colors = ['#E4572E','#158A80','#EFA23B','#6A4C93'];
+  const positions = [[-120,-120,420],[1050,700,520],[900,-160,320],[-140,760,360]];
+  positions.forEach(([cx,cy,r],i)=>{
+    const rings = 5;
+    let circles='';
+    for(let k=1;k<=rings;k++){
+      circles += `<circle cx="${cx}" cy="${cy}" r="${r*k/rings}" fill="none" stroke="${colors[i%colors.length]}" stroke-width="1.5"/>`;
+    }
+    let spokes='';
+    for(let s=0;s<16;s++){
+      const ang = (Math.PI*2*s)/16;
+      spokes += `<line x1="${cx}" y1="${cy}" x2="${cx+Math.cos(ang)*r}" y2="${cy+Math.sin(ang)*r}" stroke="${colors[i%colors.length]}" stroke-width="1"/>`;
+    }
+    const svg = `<svg width="${r*2}" height="${r*2}" style="left:${cx-r}px;top:${cy-r}px" viewBox="${cx-r} ${cy-r} ${r*2} ${r*2}">${spokes}${circles}</svg>`;
+    el.insertAdjacentHTML('beforeend', svg);
+  });
+})();
+
+// --- silencio ---
+const btnMute = document.getElementById('btnMute');
+btnMute.addEventListener('click', ()=>{
+  ensureAudio();
+  const muted = toggleMute();
+  btnMute.textContent = muted ? '🔇' : '🔊';
+  if(!muted) sfxClick();
+});
+
+// --- tabs ---
+const tabButtons = document.querySelectorAll('nav.tabs button');
+tabButtons.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    ensureAudio(); sfxClick();
+    tabButtons.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('section.panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('panel-'+btn.dataset.panel).classList.add('active');
+  });
+});
+
+// --- modo dibujar / foto ---
+const drawModeBtn = document.getElementById('modeDrawBtn');
+const photoModeBtn = document.getElementById('modePhotoBtn');
+const drawModeEl = document.getElementById('drawMode');
+const photoModeEl = document.getElementById('photoMode');
+let inputMode = 'draw';
+let gameMode = 'platform';
+const GAME_MODE_HINTS = {
+  platform: 'Saltás de plataforma en plataforma, juntás objetos y llegás a la meta.',
+  maze: 'Los trazos negros son las paredes. Juntá todas las pastillas azules esquivando los peligros rojos, que persiguen.',
+  pong: 'Dos jugadores en la misma pantalla: tu personaje verde es una paleta y la meta violeta es la otra. Primero a 5 puntos.'
+};
+const MODE_BTNS = {platform:'gmPlatform', maze:'gmMaze', pong:'gmPong'};
+function setGameMode(m){
+  gameMode = m;
+  Object.keys(MODE_BTNS).forEach(k=>{
+    document.getElementById(MODE_BTNS[k]).classList.toggle('active', k===m);
+  });
+  document.getElementById('gameModeHint').textContent = GAME_MODE_HINTS[m];
+}
+Object.keys(MODE_BTNS).forEach(k=>{
+  document.getElementById(MODE_BTNS[k]).addEventListener('click', ()=>{ ensureAudio(); sfxClick(); setGameMode(k); });
+});
+drawModeBtn.addEventListener('click', ()=>{ ensureAudio(); sfxClick(); inputMode='draw'; drawModeEl.style.display='block'; photoModeEl.style.display='none'; drawModeBtn.classList.add('active'); photoModeBtn.classList.remove('active'); });
+photoModeBtn.addEventListener('click', ()=>{ ensureAudio(); sfxClick(); inputMode='photo'; drawModeEl.style.display='none'; photoModeEl.style.display='block'; photoModeBtn.classList.add('active'); drawModeBtn.classList.remove('active'); });
+drawModeBtn.classList.add('active');
+
+// --- herramienta de dibujo ---
+const pens = [
+  {name:'Plataforma', color:'#1c1c1c'},
+  {name:'Personaje', color:'#2fae4e'},
+  {name:'Objeto', color:'#2f6fe4'},
+  {name:'Peligro', color:'#e0333f'},
+  {name:'Meta', color:'#8b3fd4'},
+  {name:'Trampolín', color:'#f4d13d'},
+  {name:'Trampa', color:'#f07d1c'},
+  {name:'Rebote (pinball)', color:'#17b6c4'},
+];
+let currentPen = pens[0].color;
+const penToolbar = document.getElementById('penToolbar');
+pens.forEach((p,i)=>{
+  const b = document.createElement('button');
+  b.className = 'pen-btn'+(i===0?' selected':'');
+  b.style.background = p.color;
+  b.title = p.name;
+  b.addEventListener('click', ()=>{
+    ensureAudio(); sfxClick();
+    currentPen = p.color;
+    document.querySelectorAll('.pen-btn').forEach(x=>x.classList.remove('selected'));
+    b.classList.add('selected');
+  });
+  penToolbar.appendChild(b);
+});
+
+const drawCanvas = document.getElementById('drawCanvas');
+const dctx = drawCanvas.getContext('2d');
+dctx.fillStyle = '#fff'; dctx.fillRect(0,0,drawCanvas.width,drawCanvas.height);
+let drawing = false;
+const brushSize = document.getElementById('brushSize');
+
+function canvasPoint(e, canvas){
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  return { x: cx * canvas.width/rect.width, y: cy * canvas.height/rect.height };
+}
+function startDraw(e){
+  drawing = true;
+  const {x,y} = canvasPoint(e, drawCanvas);
+  dctx.beginPath(); dctx.moveTo(x,y);
+  e.preventDefault();
+}
+function moveDraw(e){
+  if(!drawing) return;
+  const {x,y} = canvasPoint(e, drawCanvas);
+  dctx.lineTo(x,y);
+  dctx.strokeStyle = currentPen;
+  dctx.lineWidth = parseInt(brushSize.value) * (drawCanvas.width/drawCanvas.getBoundingClientRect().width);
+  dctx.lineCap = 'round'; dctx.lineJoin='round';
+  dctx.stroke();
+  e.preventDefault();
+}
+function endDraw(){ drawing = false; }
+['mousedown','touchstart'].forEach(ev=>drawCanvas.addEventListener(ev, startDraw, {passive:false}));
+['mousemove','touchmove'].forEach(ev=>drawCanvas.addEventListener(ev, moveDraw, {passive:false}));
+['mouseup','mouseleave','touchend','touchcancel'].forEach(ev=>drawCanvas.addEventListener(ev, endDraw));
+
+document.getElementById('clearDrawBtn').addEventListener('click', ()=>{
+  dctx.fillStyle = '#fff'; dctx.fillRect(0,0,drawCanvas.width,drawCanvas.height);
+});
+
+// --- foto ---
+const photoInput = document.getElementById('photoInput');
+document.getElementById('photoBtn').addEventListener('click', ()=>photoInput.click());
+document.getElementById('photoDrop').addEventListener('click', (e)=>{ if(e.target.tagName!=='BUTTON') photoInput.click(); });
+let photoImg = null;
+let cropQuad = null;
+let templateDetected = false;
+const cropBox = document.getElementById('cropBox');
+const tplStatus = document.getElementById('tplStatus');
+
+document.getElementById('printTemplateBtn').addEventListener('click', ()=>{
+  ensureAudio(); sfxClick();
+  const win = window.open('', '_blank');
+  if(!win){
+    document.getElementById('buildMsg').textContent = 'El navegador bloqueó la ventana. Permitilas e intentá de nuevo.';
+    return;
+  }
+  win.document.write(buildTemplateHTML());
+  win.document.close();
+});
+
+function setTplStatus(){
+  if(!tplStatus) return;
+  tplStatus.textContent = templateDetected
+    ? '✅ Plantilla detectada: encuadre automático por las 4 marcas y colores calibrados con la franja.'
+    : 'ℹ️ Sin plantilla: encuadre estimado. Si podés, imprimí la plantilla para mejorar la detección con poca luz.';
+}
+const cropCanvas = document.getElementById('cropCanvas');
+
+photoInput.addEventListener('change', ()=>{
+  const file = photoInput.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const img = new Image();
+    img.onload = ()=>{
+      photoImg = img;
+      const preview = document.getElementById('photoPreview');
+      preview.src = reader.result;
+      preview.style.display = 'none';   // la vista previa pasa a ser el encuadre
+      setupCropper(img);
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function defaultQuad(img){
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const mx = W*0.06, my = H*0.06;
+  return [{x:mx,y:my},{x:W-mx,y:my},{x:W-mx,y:H-my},{x:mx,y:H-my}];
+}
+
+function setupCropper(img){
+  cropBox.style.display = 'block';
+  const maxW = 900;
+  const k = Math.min(1, maxW/img.naturalWidth);
+  cropCanvas.width = Math.round(img.naturalWidth*k);
+  cropCanvas.height = Math.round(img.naturalHeight*k);
+  const marks = detectCornerMarks(img);
+  templateDetected = !!marks;
+  cropQuad = marks || detectSheetQuad(img) || defaultQuad(img);
+  setTplStatus();
+  drawCropper();
+}
+
+function drawCropper(){
+  if(!photoImg || !cropQuad) return;
+  const ctx = cropCanvas.getContext('2d');
+  const k = cropCanvas.width / photoImg.naturalWidth;
+  ctx.clearRect(0,0,cropCanvas.width,cropCanvas.height);
+  ctx.drawImage(photoImg, 0,0, cropCanvas.width, cropCanvas.height);
+
+  // oscurecer todo lo que queda fuera de la hoja
+  ctx.save();
+  ctx.fillStyle = 'rgba(20,18,14,.55)';
+  ctx.beginPath();
+  ctx.rect(0,0,cropCanvas.width,cropCanvas.height);
+  ctx.moveTo(cropQuad[0].x*k, cropQuad[0].y*k);
+  for(let i=3;i>=1;i--) ctx.lineTo(cropQuad[i].x*k, cropQuad[i].y*k);
+  ctx.closePath();
+  ctx.fill('evenodd');
+  ctx.restore();
+
+  ctx.strokeStyle = '#EFA23B'; ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(cropQuad[0].x*k, cropQuad[0].y*k);
+  for(let i=1;i<4;i++) ctx.lineTo(cropQuad[i].x*k, cropQuad[i].y*k);
+  ctx.closePath(); ctx.stroke();
+
+  cropQuad.forEach(pt=>{
+    ctx.beginPath();
+    ctx.fillStyle = '#E4572E';
+    ctx.arc(pt.x*k, pt.y*k, 11, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+  });
+}
+
+let dragCorner = -1;
+function cropPointer(e){
+  const rect = cropCanvas.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+  const scale = cropCanvas.width / rect.width;
+  return {
+    x: (t.clientX - rect.left) * scale / (cropCanvas.width / photoImg.naturalWidth),
+    y: (t.clientY - rect.top) * scale / (cropCanvas.width / photoImg.naturalWidth)
+  };
+}
+function cropStart(e){
+  if(!cropQuad) return;
+  e.preventDefault();
+  const p = cropPointer(e);
+  let best = -1, bestD = Infinity;
+  cropQuad.forEach((pt,i)=>{
+    const d = Math.hypot(pt.x-p.x, pt.y-p.y);
+    if(d < bestD){ bestD = d; best = i; }
+  });
+  const tol = photoImg.naturalWidth*0.09;
+  dragCorner = bestD < tol ? best : -1;
+}
+function cropMove(e){
+  if(dragCorner < 0) return;
+  e.preventDefault();
+  const p = cropPointer(e);
+  cropQuad[dragCorner] = {
+    x: Math.max(0, Math.min(photoImg.naturalWidth, p.x)),
+    y: Math.max(0, Math.min(photoImg.naturalHeight, p.y))
+  };
+  drawCropper();
+}
+function cropEnd(){ dragCorner = -1; }
+cropCanvas.addEventListener('mousedown', cropStart);
+cropCanvas.addEventListener('touchstart', cropStart, {passive:false});
+window.addEventListener('mousemove', cropMove);
+cropCanvas.addEventListener('touchmove', cropMove, {passive:false});
+window.addEventListener('mouseup', cropEnd);
+cropCanvas.addEventListener('touchend', cropEnd);
+
+document.getElementById('autoCropBtn').addEventListener('click', ()=>{
+  sfxClick();
+  if(!photoImg) return;
+  const marks = detectCornerMarks(photoImg);
+  templateDetected = !!marks;
+  cropQuad = marks || detectSheetQuad(photoImg) || defaultQuad(photoImg);
+  setTplStatus();
+  drawCropper();
+});
+document.getElementById('fullCropBtn').addEventListener('click', ()=>{
+  sfxClick();
+  if(!photoImg) return;
+  const W = photoImg.naturalWidth, H = photoImg.naturalHeight;
+  cropQuad = [{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}];
+  templateDetected = false;
+  setTplStatus();
+  drawCropper();
+});
+
+// --- crear juego ---
+let currentLevel = null;
+const buildBtn = document.getElementById('buildBtn');
+const buildMsg = document.getElementById('buildMsg');
+
+buildBtn.addEventListener('click', ()=>{
+  ensureAudio(); sfxClick();
+  buildMsg.textContent = 'Analizando tu dibujo...';
+  setTimeout(()=>{
+    let sourceCanvas;
+    if(inputMode === 'draw'){
+      COLOR_CALIB = null;
+      sourceCanvas = drawCanvas;
+    } else {
+      if(!photoImg){ buildMsg.textContent = 'Primero elegí una foto.'; return; }
+      const quad = cropQuad || defaultQuad(photoImg);
+      COLOR_CALIB = null;
+      if(templateDetected){
+        // con plantilla: rectificamos dibujo + franja, medimos los colores
+        // reales y después nos quedamos sólo con la zona de dibujo
+        const full = warpQuad(photoImg, quad, TPL_OUT_W, TPL_OUT_H);
+        COLOR_CALIB = sampleCalibStrip(full);
+        sourceCanvas = cropPlayArea(full);
+      } else {
+        sourceCanvas = warpQuad(photoImg, quad, 960, 600);
+      }
+    }
+    currentLevel = imageToLevel(sourceCanvas);
+    currentLevel.mode = gameMode;
+    buildMsg.textContent = COLOR_CALIB
+      ? '¡Listo! Colores calibrados con la franja de la plantilla. Abriendo tu juego...'
+      : '¡Listo! Abriendo tu juego...';
+    document.querySelector('nav.tabs button[data-panel="jugar"]').click();
+    document.getElementById('playTitle').textContent = 'Tu juego';
+    startPlaying(currentLevel);
+  }, 30);
+});
+
+// --- reproductor ---
+const gameCanvas = document.getElementById('gameCanvas');
+const hudScore = document.getElementById('hudScore');
+const hudGoal = document.getElementById('hudGoal');
+const overlay = document.getElementById('gameOverlay');
+const overlayTitle = document.getElementById('overlayTitle');
+const overlayText = document.getElementById('overlayText');
+let activeLoop = null;
+const gameInput = attachControls(gameCanvas, document.getElementById('btnLeft'), document.getElementById('btnRight'),
+  document.getElementById('btnJump'), document.getElementById('btnUp'), document.getElementById('btnDown'));
+let pongTouchBound = false;
+
+function applyModeUI(level){
+  const mode = level.mode || 'platform';
+  const show = (id, on) => { document.getElementById(id).style.display = on ? '' : 'none'; };
+  show('btnUp', mode === 'maze');
+  show('btnDown', mode === 'maze');
+  show('btnJump', mode === 'platform');
+  show('dpadWrap', mode !== 'pong');
+  const hint = document.getElementById('controlsHint');
+  if(mode === 'maze') hint.textContent = 'Movete en las 4 direcciones con las flechas, WASD o la cruceta.';
+  else if(mode === 'pong') hint.textContent = 'Jugador 1: teclas W/S o arrastrá el dedo en la mitad izquierda. Jugador 2: flechas ↑/↓ o la mitad derecha.';
+  else hint.textContent = 'Movete con las flechas o A/D, saltá con espacio o ▲ — también podés usar los botones táctiles.';
+  if(mode === 'pong' && !pongTouchBound){
+    attachPongTouch(gameCanvas, gameInput, level);
+    pongTouchBound = true;
+  }
+}
+
+function updateHUD(level, state){
+  const mode = level.mode || 'platform';
+  if(mode === 'pong'){
+    hudScore.textContent = '🟩 ' + state.scoreL;
+    hudGoal.textContent = state.scoreR + ' 🟪  —  primero a ' + state.target;
+  } else if(mode === 'maze'){
+    hudScore.textContent = '⭐ ' + state.score;
+    hudGoal.textContent = '❤️ ' + state.lives + '   faltan ' + state.remaining;
+  } else {
+    hudScore.textContent = '⭐ ' + state.score;
+    const left = Math.max(0, level.collectibles.length - state.score);
+    hudGoal.textContent = '❤️ ' + state.lives + '   🏁 faltan ' + left;
+  }
+}
+
+function endMessage(level, state){
+  const mode = level.mode || 'platform';
+  if(mode === 'pong'){
+    const p1 = state.scoreL > state.scoreR;
+    return {
+      title: p1 ? '¡Ganó el jugador 1! 🟩' : '¡Ganó el jugador 2! 🟪',
+      text: 'Resultado final: ' + state.scoreL + ' a ' + state.scoreR + '.'
+    };
+  }
+  if(state.status === 'won'){
+    return mode === 'maze'
+      ? {title:'¡Laberinto limpio! 🎉', text:'Juntaste las ' + state.score + ' pastillas sin quedarte sin vidas.'}
+      : {title:'¡Ganaste! 🎉', text:'Juntaste ' + state.score + ' de ' + level.collectibles.length + ' objetos.'};
+  }
+  return {title:'Se acabaron tus vidas 💥', text:'Probá de nuevo, ¡vos podés!'};
+}
+
+let cachedAssets = null, cachedAssetsFor = null;
+
+function startPlaying(level){
+  if(activeLoop) activeLoop.stop();
+  overlay.classList.remove('show');
+  hudGoal.textContent = '';
+  if(cachedAssetsFor === level && cachedAssets){
+    launchLoop(level, cachedAssets);
+  } else {
+    loadLevelAssets(level).then(assets=>{
+      cachedAssets = assets; cachedAssetsFor = level;
+      launchLoop(level, assets);
+    });
+  }
+}
+
+function launchLoop(level, assets){
+  applyModeUI(level);
+  activeLoop = runGameLoop(gameCanvas, level, gameInput, {
+    onFrame: (state)=>updateHUD(level, state),
+    onEnd: (state)=>{
+      overlay.classList.add('show');
+      const msg = endMessage(level, state);
+      overlayTitle.textContent = msg.title;
+      overlayText.textContent = msg.text;
+    }
+  }, assets);
+}
+document.getElementById('overlayRetry').addEventListener('click', ()=>{
+  ensureAudio(); sfxClick();
+  if(currentLevel) startPlaying(currentLevel);
+});
+
+// --- ejemplos ---
+const EXAMPLES = [
+  {
+    name:'Salto de estrellas',
+    desc:'Plataformas simples, juntá las estrellas y llegá a la meta.',
+    level:{
+      w:LEVEL_W,h:LEVEL_H,
+      platforms:[{x:0,y:586,w:960,h:14,floor:true},{x:80,y:480,w:180,h:20},{x:340,y:400,w:160,h:20},{x:580,y:320,w:160,h:20},{x:800,y:230,w:140,h:20}],
+      player:{x:110,y:480},
+      collectibles:[{x:170,y:440,r:14},{x:420,y:360,r:14},{x:660,y:280,r:14}],
+      hazards:[{x:300,y:560,r:16},{x:520,y:560,r:16}],
+      traps:[], bumpers:[],
+      goal:{x:860,y:190,r:20}
+    }
+  },
+  {
+    name:'Esquivá el fuego',
+    desc:'Más peligros, más cuidado. Encontrá el camino hasta la bandera.',
+    level:{
+      w:LEVEL_W,h:LEVEL_H,
+      platforms:[{x:0,y:586,w:960,h:14,floor:true},{x:0,y:500,w:220,h:20},{x:280,y:440,w:180,h:20},{x:520,y:500,w:180,h:20},{x:760,y:420,w:200,h:20}],
+      player:{x:60,y:460},
+      collectibles:[{x:360,y:400,r:14},{x:600,y:460,r:14},{x:840,y:380,r:14}],
+      hazards:[{x:250,y:560,r:18},{x:480,y:560,r:18},{x:700,y:560,r:18}],
+      traps:[], bumpers:[],
+      goal:{x:900,y:380,r:20}
+    }
+  },
+  {
+    name:'Torre alta',
+    desc:'Subí escalón por escalón hasta la cima.',
+    level:{
+      w:LEVEL_W,h:LEVEL_H,
+      platforms:[{x:0,y:586,w:960,h:14,floor:true},{x:40,y:520,w:160,h:20},{x:240,y:450,w:160,h:20},{x:60,y:380,w:160,h:20},{x:260,y:300,w:160,h:20},{x:80,y:220,w:160,h:20},{x:280,y:150,w:180,h:20}],
+      player:{x:80,y:500},
+      collectibles:[{x:300,y:410,r:14},{x:120,y:340,r:14},{x:320,y:260,r:14}],
+      hazards:[{x:200,y:560,r:16}],
+      traps:[], bumpers:[],
+      goal:{x:360,y:110,r:20}
+    }
+  },
+  {
+    name:'Parque de rebotes',
+    desc:'Trampolines, trampas y rebotes de pinball todos juntos.',
+    level:{
+      w:LEVEL_W,h:LEVEL_H,
+      platforms:[
+        {x:0,y:586,w:960,h:14,floor:true},
+        {x:40,y:520,w:140,h:18},
+        {x:260,y:520,w:100,h:18,bounce:true},
+        {x:520,y:300,w:160,h:18},
+        {x:760,y:170,w:160,h:18}
+      ],
+      player:{x:80,y:500},
+      collectibles:[{x:600,y:260,r:14},{x:820,y:130,r:14}],
+      hazards:[{x:440,y:560,r:16}],
+      traps:[{x:340,y:470,r:16}],
+      bumpers:[{x:470,y:470,r:18},{x:660,y:420,r:18}],
+      goal:{x:840,y:130,r:20}
+    }
+  }
+];
+
+const examplesGrid = document.getElementById('examplesGrid');
+EXAMPLES.forEach(ex=>{
+  const card = document.createElement('div');
+  card.className = 'ex-card';
+  const canvas = document.createElement('canvas');
+  canvas.width = 480; canvas.height = 300;
+  card.appendChild(canvas);
+  const body = document.createElement('div');
+  body.className = 'body';
+  body.innerHTML = `<h4>${ex.name}</h4><p>${ex.desc}</p>`;
+  const playBtn = document.createElement('button');
+  playBtn.className = 'primary-btn';
+  playBtn.textContent = 'Jugar este ejemplo';
+  playBtn.addEventListener('click', ()=>{
+    ensureAudio(); sfxClick();
+    currentLevel = ex.level;
+    document.querySelector('nav.tabs button[data-panel="jugar"]').click();
+    document.getElementById('playTitle').textContent = ex.name;
+    startPlaying(currentLevel);
+  });
+  body.appendChild(playBtn);
+  card.appendChild(body);
+  examplesGrid.appendChild(card);
+  const previewState = createGameState(ex.level);
+  renderGame(canvas.getContext('2d'), ex.level, previewState, canvas.width, canvas.height);
+});
+
+/* ======================================================================
+   EXPORTAR A HTML AUTOCONTENIDO
+   ====================================================================== */
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  ensureAudio(); sfxClick();
+  if(!currentLevel){
+    document.getElementById('downloadMsg').textContent = 'Primero creá o elegí un juego.';
+    return;
+  }
+  const html = buildStandaloneHTML(currentLevel);
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'mi-juego-nanduti.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  document.getElementById('downloadMsg').textContent = '¡Descargado! Abrilo con cualquier navegador.';
+});
+
+function buildStandaloneHTML(level){
+  const engineSrc = [
+    ensureAudio, toggleMute, beep, sfxClick, sfxJump, sfxCollect, sfxHurt, sfxTrap, sfxBounce, sfxBumper, sfxWin, sfxLose,
+    createGameState, stepPhysics, respawn, spawnSparks, stepParticles,
+    rectsOverlap, circleRectOverlap,
+    mazeCellSize, mazeIsWall, mazeBlocked, mazeNearestFree, mazeReachable, mazeNearestReachable, createMazeState, stepMaze, renderMaze,
+    createPongState, pongServe, stepPong, renderPong, attachPongTouch,
+    drawSprite, renderGame, attachControls, runGameLoop, loadLevelAssets
+  ].map(fn => fn.toString()).join('\n\n');
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi juego — Ñandutí Play</title>
+<style>
+  body{margin:0;background:#FBF6EC;font-family:sans-serif;color:#25221E;display:flex;flex-direction:column;align-items:center;padding:20px;}
+  h1{font-size:1.3rem;}
+  .stage-wrap{position:relative;width:100%;max-width:900px;}
+  #gameCanvas{width:100%;aspect-ratio:8/5;background:#eef3f0;border-radius:12px;border:2px solid #25221E;touch-action:none;display:block;}
+  .hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);pointer-events:none;font-size:1.1rem;}
+  .overlay{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(20,18,14,.72);border-radius:12px;color:#fff;text-align:center;gap:12px;padding:20px;}
+  .overlay.show{display:flex;}
+  .touch-controls{display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px;width:100%;max-width:900px;}
+  .dpad{display:flex;gap:10px;}
+  .tbtn{width:64px;height:64px;border-radius:16px;border:none;background:#25221E;color:#FBF6EC;font-size:1.6rem;}
+  .tbtn.jump{background:#EFA23B;color:#25221E;}
+  button.primary{font-weight:700;background:#E4572E;color:#fff;border:none;padding:12px 20px;border-radius:12px;cursor:pointer;margin-top:10px;}
+  footer{font-size:.8rem;color:#6b6459;margin-top:24px;text-align:center;max-width:600px;}
+</style>
+</head>
+<body>
+  <h1>Mi juego</h1>
+  <div class="stage-wrap">
+    <canvas id="gameCanvas" width="960" height="600"></canvas>
+    <div class="hud"><span id="hudScore">⭐ 0</span><span>🏁</span></div>
+    <div class="overlay" id="gameOverlay">
+      <h3 id="overlayTitle">¡Listo!</h3>
+      <p id="overlayText"></p>
+      <button class="primary" id="overlayRetry">Jugar de nuevo</button>
+    </div>
+  </div>
+  <div class="touch-controls">
+    <div class="dpad"><button class="tbtn" id="btnLeft">◀</button><button class="tbtn" id="btnRight">▶</button></div>
+    <button class="tbtn" id="btnMute" title="Silenciar sonido" style="background:#F3ECDC;color:#25221E;border:2px solid #25221E;">🔊</button>
+    <button class="tbtn jump" id="btnJump">⤒</button>
+  </div>
+  <p id=\"hint\" style=\"font-size:.85rem;color:#6b6459;max-width:900px;text-align:center;\"></p>
+  <footer>Juego creado con Ñandutí Play — herramienta educativa de Code Club Ñandutí y Didáctica Aumentada.</footer>
+<script>
+let audioCtx = null;
+let soundMuted = false;
+const LEVEL = ${JSON.stringify(level)};
+${engineSrc}
+
+const gameCanvas = document.getElementById('gameCanvas');
+const hudScore = document.getElementById('hudScore');
+const overlay = document.getElementById('gameOverlay');
+const overlayTitle = document.getElementById('overlayTitle');
+const overlayText = document.getElementById('overlayText');
+const hudGoal = document.getElementById('hudGoal');
+const input = attachControls(gameCanvas, document.getElementById('btnLeft'), document.getElementById('btnRight'),
+  document.getElementById('btnJump'), document.getElementById('btnUp'), document.getElementById('btnDown'));
+const MODE = LEVEL.mode || 'platform';
+(function setupMode(){
+  const show = (id,on)=>{ const el = document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; };
+  show('btnUp', MODE==='maze'); show('btnDown', MODE==='maze');
+  show('btnJump', MODE==='platform'); show('dpadWrap', MODE!=='pong');
+  const hint = document.getElementById('hint');
+  if(MODE==='maze') hint.textContent = 'Juntá todas las pastillas esquivando los peligros. Flechas, WASD o la cruceta.';
+  else if(MODE==='pong'){
+    hint.textContent = 'Jugador 1: W/S o la mitad izquierda de la pantalla. Jugador 2: flechas ↑/↓ o la mitad derecha. Primero a 5 puntos.';
+    attachPongTouch(gameCanvas, input, LEVEL);
+  }
+  else hint.textContent = 'Flechas o A/D para moverte, espacio o ▲ para saltar.';
+})();
+function updateHUD(state){
+  if(MODE==='pong'){
+    hudScore.textContent = '🟩 ' + state.scoreL;
+    hudGoal.textContent = state.scoreR + ' 🟪  —  primero a ' + state.target;
+  } else if(MODE==='maze'){
+    hudScore.textContent = '⭐ ' + state.score;
+    hudGoal.textContent = '❤️ ' + state.lives + '   faltan ' + state.remaining;
+  } else {
+    hudScore.textContent = '⭐ ' + state.score;
+    hudGoal.textContent = '❤️ ' + state.lives;
+  }
+}
+function endMessage(state){
+  if(MODE==='pong'){
+    const p1 = state.scoreL > state.scoreR;
+    return {title: p1 ? '¡Ganó el jugador 1! 🟩' : '¡Ganó el jugador 2! 🟪',
+            text: 'Resultado final: ' + state.scoreL + ' a ' + state.scoreR + '.'};
+  }
+  if(state.status === 'won'){
+    return MODE==='maze'
+      ? {title:'¡Laberinto limpio! 🎉', text:'Juntaste las ' + state.score + ' pastillas.'}
+      : {title:'¡Ganaste! 🎉', text:'Juntaste ' + state.score + ' de ' + LEVEL.collectibles.length + ' objetos.'};
+  }
+  return {title:'Se acabaron tus vidas 💥', text:'Probá de nuevo, ¡vos podés!'};
+}
+const btnMute = document.getElementById('btnMute');
+btnMute.addEventListener('click', ()=>{
+  ensureAudio();
+  const muted = toggleMute();
+  btnMute.textContent = muted ? '🔇' : '🔊';
+});
+
+let EXPORT_ASSETS = null;
+function play(){
+  overlay.classList.remove('show');
+  if(!EXPORT_ASSETS){
+    loadLevelAssets(LEVEL).then(a=>{ EXPORT_ASSETS = a; startLoop(); });
+  } else startLoop();
+}
+function startLoop(){
+  runGameLoop(gameCanvas, LEVEL, input, {
+    onFrame: updateHUD,
+    onEnd: (state)=>{
+      overlay.classList.add('show');
+      const msg = endMessage(state);
+      overlayTitle.textContent = msg.title;
+      overlayText.textContent = msg.text;
+    }
+  }, EXPORT_ASSETS);
+}
+document.getElementById('overlayRetry').addEventListener('click', play);
+play();
+<\/script>
+</body>
+</html>`;
+}
+</script>
+</body>
+</html>
